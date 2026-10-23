@@ -74,14 +74,36 @@ export type IntegratedDemoResult = {
   salesInvoices: number;
 };
 
+function migrateReceivablesToCurrentDemo(state: State) {
+  state.documents
+    .filter((document) =>
+      document.kind === "CP" &&
+      document.lines.some((line) => line.productId.startsWith("PRD-DEMO-")),
+    )
+    .forEach((document) => {
+      document.method = "Crédito 30 días";
+      document.commercialTerms = "Crédito 30 días";
+    });
+}
+
 /**
  * Creates five connected scenarios for local demonstration.
  * It intentionally does not mark documents as `demo`, because those records
  * must remain after a reload and be usable by the rest of the ERP.
  */
 export function seedIntegratedDemoData(state: State): IntegratedDemoResult {
-  if (state.integratedDemoVersion === 1)
+  if (state.integratedDemoVersion === 2)
     return { sets: demoCases.length, created: false, products: 5, purchaseOrders: 5, salesInvoices: 5 };
+
+  if (state.integratedDemoVersion === 1) {
+    migrateReceivablesToCurrentDemo(state);
+    state.customers
+      .filter((customer) => customer.id.startsWith("CLI-DEMO-"))
+      .forEach((customer) => { customer.paymentTerms = "Crédito 30 días"; });
+    state.integratedDemoVersion = 2;
+    state.audit.unshift({ id: crypto.randomUUID(), date: new Date().toISOString(), action: "Actualizar datos simulados", record: "Cartera vigente a 30 días" });
+    return { sets: demoCases.length, created: false, products: 5, purchaseOrders: 5, salesInvoices: 5 };
+  }
 
   ensureMasterData(state);
   state.brands ??= [];
@@ -132,7 +154,7 @@ export function seedIntegratedDemoData(state: State): IntegratedDemoResult {
       category: "Comercial",
       province: "Lima",
       department: "Lima",
-      paymentTerms: index % 2 ? "Contado" : "Crédito 30 días",
+      paymentTerms: "Crédito 30 días",
       currency: priceList.currencyId,
       zoneId: item.zone.id,
       sellerId: item.seller.id,
@@ -176,7 +198,7 @@ export function seedIntegratedDemoData(state: State): IntegratedDemoResult {
       date,
       partyId: item.customer.id,
       warehouseId: warehouse.id,
-      method: "Contado",
+      method: "Crédito 30 días",
       voucher: "Pedido de venta",
       lines: [{ productId: item.product.id, quantity: 5, price: item.product.price }],
       discount: 0,
@@ -187,7 +209,7 @@ export function seedIntegratedDemoData(state: State): IntegratedDemoResult {
     invoice(state, sale.id, "Factura electrónica", date);
   });
 
-  state.integratedDemoVersion = 1;
+  state.integratedDemoVersion = 2;
   state.audit.unshift({ id: crypto.randomUUID(), date: new Date().toISOString(), action: "Cargar datos simulados", record: "5 escenarios conectados" });
   return { sets: demoCases.length, created: true, products: 5, purchaseOrders: 5, salesInvoices: 5 };
 }

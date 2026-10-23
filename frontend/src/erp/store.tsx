@@ -54,7 +54,7 @@ function read(): State {
     const mastersUpdated = ensureMasterData(state);
     const payablesUpdated = ensurePurchasePayables(state);
     let integratedDemoUpdated = false;
-    if (state.integratedDemoVersion !== 1) {
+    if (state.integratedDemoVersion !== 2) {
       seedIntegratedDemoData(state);
       ensurePurchasePayables(state);
       integratedDemoUpdated = true;

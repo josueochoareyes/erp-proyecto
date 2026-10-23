@@ -447,7 +447,7 @@ export type State = {
   businessCleanupVersion?: 1;
   clearedOperationDates?: string[];
   demoDashboardVersion?: number;
-  integratedDemoVersion?: 1;
+  integratedDemoVersion?: 2;
   payables?: {
     id: string;
     documentId: string;
