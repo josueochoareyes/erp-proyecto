@@ -385,7 +385,7 @@ export function Catalogs({ initialTab }: { initialTab?: Catalog } = {}) {
           </p>
         </div>
         <div className="masters-page-actions">
-          <button type="button" className="secondary-btn" onClick={() => setMasterImportOpen(true)}><Upload size={16} /> Importar catálogo CSV</button>
+          <button type="button" className="secondary-btn" onClick={() => setMasterImportOpen(true)}><Upload size={16} /> Importación masiva CSV</button>
         </div>
       </div>
       <div className="masters-groups" aria-label="Grupos del módulo Maestros">

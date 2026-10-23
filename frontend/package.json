@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "test": "node --test tests/model.test.mjs tests/catalog.test.mjs tests/products.test.mjs tests/dashboard.test.mjs tests/sales-documents.test.mjs tests/operation-cleanup.test.mjs tests/csv-import.test.mjs tests/master-migrations.test.mjs tests/master-csv-import.test.mjs tests/integrated-demo-data.test.mjs",
+    "test": "node --test tests/model.test.mjs tests/catalog.test.mjs tests/products.test.mjs tests/dashboard.test.mjs tests/sales-documents.test.mjs tests/operation-cleanup.test.mjs tests/csv-import.test.mjs tests/master-migrations.test.mjs tests/master-csv-import.test.mjs tests/bulk-master-import.test.mjs tests/integrated-demo-data.test.mjs",
     "test:browser": "playwright test",
     "preview": "vite preview"
   },

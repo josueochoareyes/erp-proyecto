@@ -1,5 +1,9 @@
 # Importación CSV de Mantenimientos
 
+## Importación masiva de Maestros
+
+Usa **Maestros → Importación masiva CSV** y selecciona varios archivos `.csv` en una sola acción. Descarga desde el modal el paquete de 17 plantillas con encabezados vacíos. No hace falta seleccionar los archivos en orden: el importador procesa primero monedas, empresa, sucursales, categorías y unidades; después los productos y los catálogos que dependen de ellos. La revisión desplegable muestra el resultado de cada archivo. Un archivo con encabezados incompatibles bloquea todo el lote; una fila con errores se omite y aparece identificada. Puedes omitir o actualizar duplicados antes de confirmar. Los productos entran con stock cero y no se generan operaciones comerciales.
+
 En **Mantenimientos** abre Clientes, Proveedores o Productos y selecciona **Importar CSV**. Descarga la plantilla de ese apartado, completa las filas y guarda el archivo como CSV UTF-8. La plantilla contiene únicamente los encabezados para evitar importar ejemplos como registros reales.
 
 | Apartado | Columnas obligatorias | Columnas opcionales |

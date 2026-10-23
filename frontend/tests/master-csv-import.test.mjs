@@ -28,7 +28,7 @@ test("las 17 plantillas tienen diez filas y el importador identifica cada submó
 test("un solo botón enruta cada CSV al catálogo correcto y conserva relaciones", async () => {
   const state = initialState();
   ensureMasterData(state);
-  for (const name of ["01-empresas.csv", "02-sucursales.csv", "03-almacenes.csv", "05-categorias.csv", "06-marcas.csv", "07-unidades.csv", "04-productos.csv", "08-conversiones.csv", "11-transportistas.csv", "12-vendedores.csv", "13-zonas.csv", "14-monedas-tipos-cambio.csv", "15-impuestos.csv", "16-formas-pago.csv", "09-clientes.csv", "10-proveedores.csv", "17-listas-precios.csv"]) {
+  for (const name of ["14-monedas-tipos-cambio.csv", "01-empresas.csv", "02-sucursales.csv", "03-almacenes.csv", "05-categorias.csv", "06-marcas.csv", "07-unidades.csv", "04-productos.csv", "08-conversiones.csv", "11-transportistas.csv", "13-zonas.csv", "12-vendedores.csv", "15-impuestos.csv", "16-formas-pago.csv", "17-listas-precios.csv", "09-clientes.csv", "10-proveedores.csv"]) {
     const result = importMasterCsv(state, await file(name), "skip");
     assert.equal(result.errors, 0, `${name}: ${result.errors}`);
   }
