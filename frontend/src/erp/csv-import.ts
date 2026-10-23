@@ -173,8 +173,17 @@ function validateRow(state: State, kind: ImportKind, row: ImportRow) {
     else if (category) values.category = category;
     if (values.unit && !/^[\p{L}\p{N}.\- /]{1,20}$/u.test(values.unit))
       errors.unit = "La unidad debe tener entre 1 y 20 caracteres.";
+    else if (values.unit && state.units?.length && !state.units.some((unit) => normalize(unit.code) === normalize(values.unit) || normalize(unit.abbreviation) === normalize(values.unit)))
+      errors.unit = "La unidad no existe en Maestros.";
   } else if (values.taxId && !/^\d{8}(?:\d{3})?$/.test(values.taxId))
     errors.taxId = "Ingresa DNI de 8 dígitos o RUC de 11 dígitos.";
+  if (kind === "customers") {
+    if (values.zoneId && !state.zones?.some((zone) => zone.id === values.zoneId)) errors.zoneId = "La zona no existe.";
+    if (values.sellerId && !state.sellers?.some((seller) => seller.id === values.sellerId)) errors.sellerId = "El vendedor no existe.";
+    if (values.priceListId && !state.priceLists?.some((list) => list.id === values.priceListId)) errors.priceListId = "La lista de precios no existe.";
+  }
+  if (kind !== "products" && values.currency && !state.currencies?.some((currency) => currency.id === values.currency))
+    errors.currency = "La moneda no existe.";
   const matches = resolveMatch(state, kind, values);
   if (matches.length > 1) errors.id = "Los identificadores del CSV coinciden con varios registros diferentes.";
   const match = matches[0];
@@ -270,6 +279,10 @@ export function importCsv(state: State, kind: ImportKind, text: string, mode: Du
     const previous = index >= 0 ? list[index] : undefined;
     const prefix = kind === "products" ? "PRD" : kind === "suppliers" ? "PRO" : "CLI";
     const record = toRecord(kind, row.values, previous, `${prefix}-${crypto.randomUUID()}`) as Party & Product;
+    if (kind === "products") {
+      record.categoryId = state.masterCategories?.find((category) => normalize(category.name) === normalize(record.category))?.id;
+      record.unitId = state.units?.find((unit) => normalize(unit.code) === normalize(record.unit) || normalize(unit.abbreviation) === normalize(record.unit))?.id;
+    }
     if (kind === "suppliers") {
       const validation = supplierErrors(state, record, previous?.id);
       if (Object.keys(validation).length) throw Error(`Fila ${row.line}: ${Object.values(validation)[0]}`);

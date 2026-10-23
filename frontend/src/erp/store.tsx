@@ -10,7 +10,7 @@ import {
 } from "react";
 import { ensureAccessControl, initialState, type State } from "./model";
 import { ensureMasterData } from "./master-migrations";
-import { seedIntegratedDemoData } from "./integrated-demo-data";
+import { seedIntegratedDemoData, separateDemoCodes } from "./integrated-demo-data";
 
 const KEY = "enterprisecloud-integrated-erp-v1";
 const OLD_BACKUP = `${KEY}-before-2026-10-16-cleanup`;
@@ -52,15 +52,23 @@ function read(): State {
     const demoOperationsCleared = clearDemoOperations(state);
     const accessUpdated = ensureAccessControl(state);
     const mastersUpdated = ensureMasterData(state);
+    const demoCodesUpdated = separateDemoCodes(state);
     const payablesUpdated = ensurePurchasePayables(state);
     let integratedDemoUpdated = false;
     if (state.integratedDemoVersion !== 2) {
-      seedIntegratedDemoData(state);
-      ensurePurchasePayables(state);
+      const hasExistingBusinessData = state.products.length || state.customers.length || state.suppliers.length ||
+        state.documents.length || state.quotes.length || state.movements.length;
+      if (state.integratedDemoVersion === 1 || !hasExistingBusinessData) {
+        seedIntegratedDemoData(state);
+        ensurePurchasePayables(state);
+      } else {
+        // Existing installations may already contain imported real records.
+        state.integratedDemoVersion = 2;
+      }
       integratedDemoUpdated = true;
     }
     // Commit before returning so reloads and other tabs cannot restore demo data.
-    if (cleaned || demoOperationsCleared || accessUpdated || mastersUpdated || payablesUpdated || integratedDemoUpdated)
+    if (cleaned || demoOperationsCleared || accessUpdated || mastersUpdated || demoCodesUpdated || payablesUpdated || integratedDemoUpdated)
       localStorage.setItem(KEY, JSON.stringify(state));
     localStorage.removeItem(OLD_BACKUP);
     return state;

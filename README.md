@@ -41,6 +41,10 @@ También se admite Root Directory `frontend`: en ese caso Vercel utiliza `fronte
 
 ## Importación CSV y puesta en marcha
 
+En **Maestros → Importación masiva CSV** puedes seleccionar juntos los archivos de los 17 catálogos. El sistema detecta cada uno por sus encabezados, los ordena según sus dependencias, valida las filas y muestra una revisión por archivo en un acordeón. La descarga de plantillas contiene únicamente encabezados. El lote se confirma en una sola transacción local; si un archivo completo es incompatible, no se guarda ningún archivo. Las filas con errores se señalan y se omiten; puedes elegir entre omitir o actualizar duplicados. La importación de maestros no crea órdenes, facturas ni movimientos de inventario.
+
+Una instalación nueva incluye cinco escenarios simulados conectados para probar compras, ventas e inventario. Al actualizar una instalación que ya tenía datos comerciales reales, el inicio no agrega esos escenarios a tus registros.
+
 En Mantenimientos → Clientes, Proveedores o Productos utiliza **Importar CSV**. El modal descarga una plantilla UTF-8 con los encabezados admitidos, permite arrastrar un archivo, muestra una vista previa con errores por fila y columna, y deja elegir entre omitir o actualizar duplicados. Solo se guardan las filas válidas. Las fechas usan `AAAA-MM-DD`, las columnas numéricas admiten punto decimal y el CSV acepta coma o punto y coma como separador. Los documentos de identidad, SKU y códigos se tratan como texto.
 
 Los directorios de Mantenimientos tienen acciones y estados vacíos ajustados a la interfaz empresarial. En la ficha de una factura, **Formato PDF** permite descargar el comprobante en A4 corporativo, Carta clásico o A5 compacto. El archivo usa el nombre de empresa configurado, los datos históricos del cliente y producto guardados en el documento, y los importes existentes; es un comprobante interno sin validación electrónica SUNAT.

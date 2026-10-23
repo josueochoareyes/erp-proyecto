@@ -1,104 +1,109 @@
 import { useMemo, useRef, useState, type ChangeEvent, type DragEvent } from "react";
-import { CircleAlert, CircleCheck, Copy, FileSpreadsheet, Rows3, UploadCloud } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronDown, Copy, Download, FileArchive, FileSpreadsheet, Rows3, UploadCloud } from "lucide-react";
 import { Modal } from "./modal";
 import { useErp } from "./store";
 import { toast } from "./toast";
-import { importMasterCsv, masterDisplayValue, previewMasterCsv, type MasterImportPreview } from "./master-csv-import";
-import type { DuplicateMode, ImportSummary } from "./csv-import";
-
-type Result = ImportSummary & { kind: string; title: string };
+import { importBulkMasterCsv, previewBulkMasterCsv, type BulkCsvFile, type BulkImportPreview } from "./bulk-master-import";
+import { masterDisplayValue } from "./master-csv-import";
+import type { DuplicateMode } from "./csv-import";
 
 export function MasterCsvImportModal({ onClose }: { onClose: () => void }) {
   const { state, transact } = useErp();
   const fileInput = useRef<HTMLInputElement>(null);
-  const [name, setName] = useState("");
-  const [content, setContent] = useState("");
+  const [files, setFiles] = useState<BulkCsvFile[]>([]);
   const [fileError, setFileError] = useState("");
   const [mode, setMode] = useState<DuplicateMode>("skip");
   const [dragging, setDragging] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [summary, setSummary] = useState<Result | null>(null);
-  const preview = useMemo<{ data: MasterImportPreview | null; error: string }>(() => {
-    if (!content) return { data: null, error: "" };
-    try { return { data: previewMasterCsv(state, content), error: "" }; }
-    catch (error) { return { data: null, error: error instanceof Error ? error.message : "CSV inválido." }; }
-  }, [content, state]);
-  const visible = preview.data?.rows.slice(0, 15) ?? [];
-  const eligible = (preview.data?.valid ?? 0) + (mode === "update" ? preview.data?.duplicate ?? 0 : 0);
+  const [summary, setSummary] = useState<BulkImportPreview | null>(null);
+  const review = useMemo(() => files.length ? previewBulkMasterCsv(state, files, mode) : null, [state, files, mode]);
+  const eligible = (review?.totals.created ?? 0) + (review?.totals.updated ?? 0);
 
-  async function readFile(file?: File) {
-    if (!file) return;
-    setFileError(""); setContent(""); setName(""); setSummary(null);
-    if (!/\.csv$/i.test(file.name)) { setFileError("Selecciona un archivo con extensión .csv."); return; }
-    if (file.size > 10 * 1024 * 1024) { setFileError("El archivo supera el límite de 10 MB."); return; }
+  async function readFiles(selected: FileList | File[]) {
+    setFileError(""); setFiles([]); setSummary(null);
+    const list = Array.from(selected);
+    if (!list.length) return;
+    if (list.length > 30) { setFileError("Selecciona como máximo 30 archivos CSV."); return; }
+    if (list.some((file) => !/\.csv$/i.test(file.name))) { setFileError("Todos los archivos deben tener extensión .csv."); return; }
+    if (list.some((file) => file.size > 10 * 1024 * 1024) || list.reduce((sum, file) => sum + file.size, 0) > 25 * 1024 * 1024) {
+      setFileError("Límite: 10 MB por archivo y 25 MB por lote."); return;
+    }
     try {
-      const decoded = new TextDecoder("utf-8", { fatal: true }).decode(await file.arrayBuffer());
-      setName(file.name); setContent(decoded);
-    } catch { setFileError("No se pudo leer el archivo. Guárdalo con codificación UTF-8."); }
+      const decoded = await Promise.all(list.map(async (file) => ({ name: file.name, text: new TextDecoder("utf-8", { fatal: true }).decode(await file.arrayBuffer()) })));
+      setFiles(decoded);
+    } catch { setFileError("No se pudo leer uno de los CSV. Guárdalos con codificación UTF-8."); }
   }
-  function drop(event: DragEvent<HTMLDivElement>) { event.preventDefault(); setDragging(false); void readFile(event.dataTransfer.files[0]); }
-  function select(event: ChangeEvent<HTMLInputElement>) { void readFile(event.target.files?.[0]); event.target.value = ""; }
+  function drop(event: DragEvent<HTMLDivElement>) { event.preventDefault(); setDragging(false); void readFiles(event.dataTransfer.files); }
+  function select(event: ChangeEvent<HTMLInputElement>) { void readFiles(event.target.files ?? []); event.target.value = ""; }
   function confirm() {
-    if (!content || !eligible || busy) return;
+    if (!review || review.hasFileErrors || !eligible || busy) return;
     setBusy(true); setFileError("");
     try {
-      let result!: Result;
-      transact((draft) => { result = importMasterCsv(draft, content, mode); });
+      let result!: BulkImportPreview;
+      transact((draft) => { result = importBulkMasterCsv(draft, files, mode); });
       setSummary(result);
-      toast.success(`Importación de ${result.title} completada.`);
-    } catch (error) { setFileError(error instanceof Error ? error.message : "No se pudo guardar la importación."); }
+      toast.success("Importación masiva completada.");
+    } catch (error) { setFileError(error instanceof Error ? error.message : "No se pudo guardar el lote."); }
     finally { setBusy(false); }
   }
   return (
-    <Modal title="Importar catálogo CSV" subtitle="Maestros · detección automática del submódulo" icon={<FileSpreadsheet size={20} />} onClose={onClose} wide className="csv-import-modal">
+    <Modal title="Importación masiva CSV" subtitle="Maestros · 17 catálogos en un solo proceso" icon={<FileArchive size={20} />} onClose={onClose} wide className="csv-import-modal masters-bulk-modal">
       {summary ? (
         <div className="csv-finish" role="status">
-          <span className="csv-finish-icon"><FileSpreadsheet size={28} /></span>
+          <span className="csv-finish-icon"><CheckCircle2 size={28} /></span>
           <h3>Importación finalizada</h3>
-          <p>{summary.title} fue actualizado. Los datos ya se encuentran disponibles en su submódulo correspondiente.</p>
+          <p>{summary.files.length} archivos procesados. Los catálogos ya están disponibles en los módulos del ERP.</p>
           <div className="csv-stats">
-            <span><strong>{summary.created}</strong> nuevos</span>
-            <span><strong>{summary.updated}</strong> actualizados</span>
-            <span><strong>{summary.skipped}</strong> omitidos</span>
-            <span><strong>{summary.errors}</strong> con errores</span>
+            <span><strong>{summary.totals.created}</strong> nuevos</span><span><strong>{summary.totals.updated}</strong> actualizados</span>
+            <span><strong>{summary.totals.skipped}</strong> omitidos</span><span><strong>{summary.totals.errors}</strong> filas con errores</span>
           </div>
+          <div className="masters-bulk-results">{summary.files.map((file) => <span key={file.name}>{file.title}: {file.result?.created ?? 0} nuevos · {file.result?.updated ?? 0} actualizados</span>)}</div>
           <div className="modal-actions"><button type="button" className="btn" onClick={onClose}>Finalizar</button></div>
         </div>
       ) : (
         <>
           <div className="csv-intro">
-            <div><span className="csv-step">PASO 01 · ARCHIVO</span><h3>Selecciona un CSV de Maestros</h3><p>El sistema identificará automáticamente el submódulo por sus encabezados y guardará cada registro en el catálogo correcto.</p></div>
+            <div><span className="csv-step">PASO 01 · ARCHIVOS</span><h3>Selecciona los CSV de los catálogos</h3><p>Puedes incluir los 17 submódulos en un lote. Se ordenarán según sus relaciones antes de importar.</p></div>
+            <a className="secondary-btn csv-template" href="/plantillas-csv/plantillas-maestros.zip" download><Download size={16} /> Descargar plantillas</a>
           </div>
-          <p className="csv-help">Admite las plantillas de los 17 submódulos. Usa UTF-8, conserva los códigos como texto y carga primero las dependencias como empresas, sucursales, categorías, unidades, monedas y productos.</p>
+          <p className="csv-help">Una plantilla por catálogo. Guarda los archivos como CSV UTF-8; los códigos relacionados deben coincidir. Las operaciones comerciales y el stock no se generan por esta importación.</p>
           <div className={`csv-drop ${dragging ? "is-dragging" : ""}`} role="button" tabIndex={0}
             onDragOver={(event) => { event.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={drop}
-            onClick={() => fileInput.current?.click()}
-            onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); fileInput.current?.click(); } }}>
+            onClick={() => fileInput.current?.click()} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); fileInput.current?.click(); } }}>
             <span className="csv-drop-icon"><UploadCloud size={25} /></span>
-            <strong>{name || "Arrastra tu CSV aquí o selecciónalo"}</strong>
-            <small>UTF-8 · .csv · hasta 10 MB · comas o punto y coma</small>
+            <strong>{files.length ? `${files.length} ${files.length === 1 ? "archivo seleccionado" : "archivos seleccionados"}` : "Arrastra varios CSV aquí o selecciónalos"}</strong>
+            <small>Hasta 30 archivos · 10 MB cada uno · 25 MB por lote</small>
           </div>
-          <input ref={fileInput} type="file" accept=".csv,text/csv" className="csv-file-input" onChange={select} aria-label="Seleccionar CSV de Maestros" />
-          {(fileError || preview.error) && <p className="error" role="alert">{fileError || preview.error}</p>}
-          {preview.data && <>
-            <div className="csv-intro csv-preview-heading"><div><span className="csv-step">PASO 02 · VALIDACIÓN</span><h3>{preview.data.title}</h3><p>Se detectó automáticamente este submódulo. Revisa las filas antes de guardar.</p></div></div>
+          <input ref={fileInput} type="file" accept=".csv,text/csv" multiple className="csv-file-input" onChange={select} aria-label="Seleccionar archivos CSV de Maestros" />
+          {fileError && <p className="error" role="alert">{fileError}</p>}
+          {review && <>
+            <div className="csv-intro csv-preview-heading"><div><span className="csv-step">PASO 02 · REVISIÓN</span><h3>Resultado del lote</h3><p>Expande cada archivo para revisar sus filas y errores antes de confirmar.</p></div></div>
             <div className="csv-stats" aria-label="Resultado de validación">
-              <span><CircleCheck size={16} /><strong>{preview.data.valid}</strong> válidos</span>
-              <span><Copy size={16} /><strong>{preview.data.duplicate}</strong> duplicados</span>
-              <span><CircleAlert size={16} /><strong>{preview.data.errors}</strong> con errores</span>
-              <span><Rows3 size={16} /><strong>{preview.data.rows.length}</strong> filas</span>
+              <span><CheckCircle2 size={16} /><strong>{review.totals.created}</strong> nuevos</span>
+              <span><Copy size={16} /><strong>{review.totals.updated + review.totals.skipped}</strong> duplicados</span>
+              <span><AlertCircle size={16} /><strong>{review.totals.errors}</strong> filas con errores</span>
+              <span><Rows3 size={16} /><strong>{review.files.length}</strong> archivos</span>
             </div>
+            {review.hasFileErrors && <p className="error" role="alert">Algunos archivos no se pueden procesar. Corrige sus encabezados o contenido antes de importar el lote.</p>}
             <label className="csv-policy">Si el registro ya existe:
-              <select value={mode} onChange={(event) => setMode(event.target.value as DuplicateMode)}><option value="skip">Omitir duplicados</option><option value="update">Actualizar existentes (conservar vínculos)</option></select>
+              <select value={mode} onChange={(event) => setMode(event.target.value as DuplicateMode)}><option value="skip">Omitir duplicados</option><option value="update">Actualizar existentes</option></select>
             </label>
-            <div className="csv-table-wrap"><table className="csv-table"><thead><tr><th>Fila</th><th>Estado</th><th>Registro</th><th>Identificador</th><th>Detalle</th></tr></thead><tbody>{visible.map((row) => <tr key={row.line}>
-              <td>{row.line}</td><td><span className={`csv-badge csv-${row.status}`}>{row.status === "error" ? "Error" : row.status === "duplicate" ? mode === "skip" ? "Se omitirá" : "Se actualizará" : "Nuevo"}</span></td>
-              <td>{masterDisplayValue(row)}</td><td>{row.values.taxId || row.values.document || row.values.id || row.values.currencyId || "—"}</td>
-              <td>{Object.entries(row.errors).length ? Object.entries(row.errors).map(([key, message]) => <div className="csv-cell-error" key={key}><b>{key === "_fila" ? "Fila" : key}:</b> {message}</div>) : row.matchId ? `Coincide con ${row.matchId}` : "Listo para importar"}</td>
-            </tr>)}</tbody></table></div>
-            {preview.data.rows.length > 15 && <p className="csv-help">Se muestran las primeras 15 filas. El resultado considera las {preview.data.rows.length} filas del archivo.</p>}
+            <div className="masters-bulk-files">
+              {review.files.map((file, index) => <details key={`${file.name}-${index}`} className="masters-bulk-file" open={index === 0 ? true : undefined}>
+                <summary><FileSpreadsheet size={17} /><span><strong>{file.title ?? file.name}</strong><small>{file.name}</small></span><em>{file.error ? "Revisar archivo" : `${file.preview?.valid ?? 0} nuevos · ${file.preview?.duplicate ?? 0} duplicados · ${file.preview?.errors ?? 0} errores`}</em><ChevronDown size={16} /></summary>
+                {file.error && <p className="masters-bulk-file-error" role="alert">{file.error}</p>}
+                {file.preview && <div className="masters-bulk-file-body">
+                  <div className="csv-table-wrap"><table className="csv-table"><thead><tr><th>Fila</th><th>Estado</th><th>Registro</th><th>Identificador</th><th>Detalle</th></tr></thead><tbody>{file.preview.rows.slice(0, 12).map((row) => <tr key={row.line}>
+                    <td>{row.line}</td><td><span className={`csv-badge csv-${row.status}`}>{row.status === "error" ? "Error" : row.status === "duplicate" ? mode === "skip" ? "Se omitirá" : "Se actualizará" : "Nuevo"}</span></td>
+                    <td>{masterDisplayValue(row)}</td><td>{row.values.taxId || row.values.document || row.values.id || row.values.currencyId || "—"}</td>
+                    <td>{Object.entries(row.errors).length ? Object.entries(row.errors).map(([key, message]) => <div className="csv-cell-error" key={key}><b>{key === "_fila" ? "Fila" : key}:</b> {message}</div>) : row.matchId ? `Coincide con ${row.matchId}` : "Listo para importar"}</td>
+                  </tr>)}</tbody></table></div>
+                  {file.preview.rows.length > 12 && <p className="csv-help">Se muestran 12 de {file.preview.rows.length} filas. La validación incluye todo el archivo.</p>}
+                </div>}
+              </details>)}
+            </div>
           </>}
-          <div className="modal-actions"><button type="button" className="secondary-btn" onClick={onClose}>Cancelar</button><button type="button" className="btn" disabled={!eligible || busy} onClick={confirm}>{busy ? "Guardando…" : `Importar ${eligible} registro${eligible === 1 ? "" : "s"}`}</button></div>
+          <div className="modal-actions"><button type="button" className="secondary-btn" onClick={onClose}>Cancelar</button><button type="button" className="btn" disabled={!eligible || review?.hasFileErrors || busy} onClick={confirm}>{busy ? "Guardando…" : `Importar ${eligible} registro${eligible === 1 ? "" : "s"}`}</button></div>
         </>
       )}
     </Modal>

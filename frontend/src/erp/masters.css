@@ -214,3 +214,33 @@
   .company-table-name { min-width: 190px; }
   .company-editor-shell { grid-template-columns: 1fr; }
 }
+
+/* Revisión masiva: un acordeón por catálogo evita una pantalla de 17 tablas abiertas. */
+.masters-bulk-modal.modal-wide { width: min(1050px, 100%); }
+.masters-bulk-files { display: grid; gap: 9px; max-height: min(43vh, 450px); overflow-y: auto; padding: 2px; }
+.masters-bulk-file { border: 1px solid var(--line); border-radius: 10px; background: var(--panel); overflow: hidden; }
+.masters-bulk-file[open] { border-color: var(--border-strong); }
+.masters-bulk-file summary { align-items: center; cursor: pointer; display: flex; gap: 10px; list-style: none; min-height: 56px; padding: 10px 14px; }
+.masters-bulk-file summary::-webkit-details-marker { display: none; }
+.masters-bulk-file summary:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+.masters-bulk-file summary > svg:first-child { color: var(--mute); flex: none; }
+.masters-bulk-file summary > svg:last-child { color: var(--mute); flex: none; transition: transform .2s ease; }
+.masters-bulk-file[open] summary > svg:last-child { transform: rotate(180deg); }
+.masters-bulk-file summary > span { flex: 1; min-width: 0; }
+.masters-bulk-file summary strong, .masters-bulk-file summary small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.masters-bulk-file summary strong { font-size: 12px; color: var(--ink); }
+.masters-bulk-file summary small, .masters-bulk-file summary em { font-size: 11px; font-style: normal; color: var(--mute); }
+.masters-bulk-file summary em { text-align: right; }
+.masters-bulk-file-body { border-top: 1px solid var(--line); padding: 12px; }
+.masters-bulk-file-body .csv-help { margin: 10px 0 0; }
+.masters-bulk-file-error { border-top: 1px solid var(--line); color: var(--ink); font-size: 12px; margin: 0; padding: 14px; }
+.masters-bulk-results { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; max-height: 210px; overflow-y: auto; text-align: left; }
+.masters-bulk-results span { border: 1px solid var(--line); border-radius: 7px; color: var(--mute); font-size: 11px; padding: 8px 10px; }
+@media (max-width: 640px) {
+  .masters-bulk-file summary { flex-wrap: wrap; }
+  .masters-bulk-file summary em { order: 3; text-align: left; width: 100%; padding-left: 27px; }
+  .masters-bulk-results { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .masters-bulk-file summary > svg:last-child { transition: none; }
+}

@@ -8,8 +8,8 @@ const demoCases = [
     customer: { id: "CLI-DEMO-001", name: "Armonía Distribuciones S.A.C.", taxId: "20609900011", contact: "Camila Ríos", district: "Surquillo" },
     supplier: { id: "PRO-DEMO-001", name: "Novalina Polímeros S.A.C.", taxId: "20609900111", contact: "Valeria Montes", category: "Materia prima" },
     transporter: { id: "TRA-DEMO-001", document: "20609901011", legalName: "Logística Lima Norte", phone: "900100001" },
-    seller: { id: "VEN-DEMO-001", code: "VEN-001", name: "Camila Ríos", commissionPct: 2.5, monthlyTarget: 25000 },
-    zone: { id: "ZON-DEMO-001", code: "ZON-001", name: "Lima Norte", route: "Ruta industrial norte" },
+    seller: { id: "VEN-DEMO-001", code: "VEN-DEMO-001", name: "Camila Ríos", commissionPct: 2.5, monthlyTarget: 25000 },
+    zone: { id: "ZON-DEMO-001", code: "ZON-DEMO-001", name: "Lima Norte", route: "Ruta industrial norte" },
     conversion: { id: "CON-DEMO-001", fromUnit: "ROL", toUnit: "UND", factor: 60 },
   },
   {
@@ -18,8 +18,8 @@ const demoCases = [
     customer: { id: "CLI-DEMO-002", name: "Vértice Abastecimientos E.I.R.L.", taxId: "20609900022", contact: "Mateo Vera", district: "San Miguel" },
     supplier: { id: "PRO-DEMO-002", name: "Altacima Resinas Industriales S.A.C.", taxId: "20609900122", contact: "Diego Salcedo", category: "Resinas" },
     transporter: { id: "TRA-DEMO-002", document: "20609901022", legalName: "Carga Segura del Pacífico", phone: "900100002" },
-    seller: { id: "VEN-DEMO-002", code: "VEN-002", name: "Mateo Vera", commissionPct: 3, monthlyTarget: 30000 },
-    zone: { id: "ZON-DEMO-002", code: "ZON-002", name: "Lima Centro", route: "Ruta comercial centro" },
+    seller: { id: "VEN-DEMO-002", code: "VEN-DEMO-002", name: "Mateo Vera", commissionPct: 3, monthlyTarget: 30000 },
+    zone: { id: "ZON-DEMO-002", code: "ZON-DEMO-002", name: "Lima Centro", route: "Ruta comercial centro" },
     conversion: { id: "CON-DEMO-002", fromUnit: "UND", toUnit: "PAQ", factor: 50 },
   },
   {
@@ -28,8 +28,8 @@ const demoCases = [
     customer: { id: "CLI-DEMO-003", name: "Brisalia Comercio Industrial S.A.C.", taxId: "20609900033", contact: "Elena Campos", district: "Ate" },
     supplier: { id: "PRO-DEMO-003", name: "Lumetra Embalajes E.I.R.L.", taxId: "20609900133", contact: "Lucía Prado", category: "Embalaje" },
     transporter: { id: "TRA-DEMO-003", document: "20609901033", legalName: "Transporte Andino Sur", phone: "900100003" },
-    seller: { id: "VEN-DEMO-003", code: "VEN-003", name: "Elena Campos", commissionPct: 2, monthlyTarget: 22000 },
-    zone: { id: "ZON-DEMO-003", code: "ZON-003", name: "Lima Este", route: "Ruta manufactura este" },
+    seller: { id: "VEN-DEMO-003", code: "VEN-DEMO-003", name: "Elena Campos", commissionPct: 2, monthlyTarget: 22000 },
+    zone: { id: "ZON-DEMO-003", code: "ZON-DEMO-003", name: "Lima Este", route: "Ruta manufactura este" },
     conversion: { id: "CON-DEMO-003", fromUnit: "KG", toUnit: "BLS", factor: 25 },
   },
   {
@@ -38,8 +38,8 @@ const demoCases = [
     customer: { id: "CLI-DEMO-004", name: "Nexora Suministros S.A.C.", taxId: "20609900044", contact: "Nicolás Lara", district: "Comas" },
     supplier: { id: "PRO-DEMO-004", name: "Conexiones del Valle S.A.C.", taxId: "20609900144", contact: "Paolo Cárdenas", category: "PVC" },
     transporter: { id: "TRA-DEMO-004", document: "20609901044", legalName: "Distribución Metropolitana", phone: "900100004" },
-    seller: { id: "VEN-DEMO-004", code: "VEN-004", name: "Nicolás Lara", commissionPct: 2.75, monthlyTarget: 28000 },
-    zone: { id: "ZON-DEMO-004", code: "ZON-004", name: "Lima Sur", route: "Ruta industrial sur" },
+    seller: { id: "VEN-DEMO-004", code: "VEN-DEMO-004", name: "Nicolás Lara", commissionPct: 2.75, monthlyTarget: 28000 },
+    zone: { id: "ZON-DEMO-004", code: "ZON-DEMO-004", name: "Lima Sur", route: "Ruta industrial sur" },
     conversion: { id: "CON-DEMO-004", fromUnit: "UND", toUnit: "CJA", factor: 24 },
   },
   {
@@ -48,8 +48,8 @@ const demoCases = [
     customer: { id: "CLI-DEMO-005", name: "Delta Comercial S.A.C.", taxId: "20609900055", contact: "Andrea Salas", district: "Miraflores" },
     supplier: { id: "PRO-DEMO-005", name: "Packline Soluciones E.I.R.L.", taxId: "20609900155", contact: "Sofía Valdivia", category: "Embalaje" },
     transporter: { id: "TRA-DEMO-005", document: "20609901055", legalName: "Envíos Industriales Lima", phone: "900100005" },
-    seller: { id: "VEN-DEMO-005", code: "VEN-005", name: "Andrea Salas", commissionPct: 3.25, monthlyTarget: 32000 },
-    zone: { id: "ZON-DEMO-005", code: "ZON-005", name: "Lima Surco", route: "Ruta comercial sur" },
+    seller: { id: "VEN-DEMO-005", code: "VEN-DEMO-005", name: "Andrea Salas", commissionPct: 3.25, monthlyTarget: 32000 },
+    zone: { id: "ZON-DEMO-005", code: "ZON-DEMO-005", name: "Lima Surco", route: "Ruta comercial sur" },
     conversion: { id: "CON-DEMO-005", fromUnit: "UND", toUnit: "CJA", factor: 12 },
   },
 ] as const;
@@ -84,6 +84,21 @@ function migrateReceivablesToCurrentDemo(state: State) {
       document.method = "Crédito 30 días";
       document.commercialTerms = "Crédito 30 días";
     });
+}
+
+/** Keep demo visible codes separate from real CSV templates; relationships use stable IDs. */
+export function separateDemoCodes(state: State) {
+  let changed = false;
+  for (const [list, prefix] of [[state.sellers, "VEN"], [state.zones, "ZON"]] as const) {
+    for (const item of list ?? []) {
+      const suffix = item.id.match(new RegExp(`^${prefix}-DEMO-(\\d{3})$`))?.[1];
+      if (suffix && item.code === `${prefix}-${suffix}`) {
+        item.code = `${prefix}-DEMO-${suffix}`;
+        changed = true;
+      }
+    }
+  }
+  return changed;
 }
 
 /**

@@ -300,7 +300,7 @@ function numeric(value: string) {
 }
 
 function validDate(value: string) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T12:00:00Z`));
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T12:00:00Z`)) && new Date(`${value}T12:00:00Z`).toISOString().slice(0, 10) === value;
 }
 
 function bool(value: string | undefined, fallback = true) {
@@ -328,14 +328,18 @@ function findMatch(state: State, kind: MasterImportKind, values: Record<string, 
   return undefined;
 }
 
-function validateCustomRow(state: State, kind: Exclude<MasterImportKind, ImportKind>, row: MasterImportRow) {
+function validateCustomRow(state: State, kind: Exclude<MasterImportKind, ImportKind>, row: MasterImportRow, plannedCategoryIds: Set<string>) {
   const fields = customFields[kind];
   for (const field of fields) if (field.required && !row.values[field.key]) row.errors[field.key] = `${field.label} es obligatorio.`;
   if (row.values.id && !/^[A-Za-z0-9_-]+$/.test(row.values.id)) row.errors.id = "El código solo admite letras, números, guiones y guiones bajos.";
   for (const key of numberFields) if (row.values[key] !== undefined && row.values[key] !== "") {
     const value = numeric(row.values[key]);
     if (!Number.isFinite(value) || value < 0) row.errors[key] = "Ingresa un número válido no negativo.";
+    else if (["precision", "creditDays"].includes(key) && !Number.isInteger(value)) row.errors[key] = "Ingresa un número entero.";
   }
+  if (row.values.factor && numeric(row.values.factor) <= 0) row.errors.factor = "El factor debe ser mayor que cero.";
+  if (row.values.price && numeric(row.values.price) <= 0) row.errors.price = "El precio debe ser mayor que cero.";
+  if (row.values.validFrom && row.values.validTo && row.values.validTo < row.values.validFrom) row.errors.validTo = "La fecha final debe ser posterior a la inicial.";
   for (const key of dateFields) if (row.values[key] && !validDate(row.values[key])) row.errors[key] = "Usa una fecha válida AAAA-MM-DD.";
   if (row.values.email && !/^\S+@\S+\.\S+$/.test(row.values.email)) row.errors.email = "Ingresa un correo válido.";
   if (row.values.active && !/^(true|false|1|0|activo|inactivo|sí|si|no)$/i.test(row.values.active)) row.errors.active = "Usa Activo, Inactivo, Sí, No, true o false.";
@@ -355,7 +359,11 @@ function validateCustomRow(state: State, kind: Exclude<MasterImportKind, ImportK
     if (!state.priceListItems?.some((item) => item.id === itemId)) row.matchId = undefined;
   }
   if (kind === "branches" && row.values.companyId && !state.companies?.some((item) => item.id === row.values.companyId)) row.errors.companyId = "La empresa debe existir antes de importar la sucursal.";
+  if (kind === "companies" && row.values.baseCurrency && !state.currencies?.some((item) => item.id === row.values.baseCurrency)) row.errors.baseCurrency = "La moneda base no existe.";
   if (kind === "warehouses" && row.values.branchId && !state.branches?.some((item) => item.id === row.values.branchId)) row.errors.branchId = "La sucursal debe existir antes de importar el almacén.";
+  if (kind === "categories" && row.values.parentId && !state.masterCategories?.some((item) => item.id === row.values.parentId) && !plannedCategoryIds.has(row.values.parentId)) row.errors.parentId = "La categoría padre no existe.";
+  if (kind === "categories" && row.values.parentId === row.values.id) row.errors.parentId = "Una categoría no puede ser su propio padre.";
+  if (kind === "currencies" && row.values.date && (!row.values.buyRate || !row.values.sellRate)) row.errors.date = "Indica compra y venta para la fecha de cambio.";
   if (kind === "conversions") {
     if (row.values.fromUnitId && !state.units?.some((item) => item.id === row.values.fromUnitId)) row.errors.fromUnitId = "La unidad origen no existe.";
     if (row.values.toUnitId && !state.units?.some((item) => item.id === row.values.toUnitId)) row.errors.toUnitId = "La unidad destino no existe.";
@@ -379,12 +387,13 @@ function makePreview(state: State, kind: Exclude<MasterImportKind, ImportKind>, 
   if (unknown.length) throw Error(`Columnas no reconocidas: ${unknown.join(", ")}. Descarga la plantilla de ${titles[kind]}.`);
   if (missing.length) throw Error(`Faltan columnas obligatorias: ${missing.map((field) => field.key).join(", ")}.`);
   const seen = new Map<string, number>();
+  const plannedCategoryIds = new Set(kind === "categories" ? parsed.slice(1).map(({ cells }) => cells[headers.indexOf("id")]?.trim()).filter(Boolean) : []);
   const rows = parsed.slice(1).map(({ line, cells }): MasterImportRow => {
     const values: Record<string, string> = {};
     headers.forEach((key, index) => { values[key] = cells[index]?.trim() ?? ""; });
     const row: MasterImportRow = { line, values, errors: {}, status: "valid" };
     if (cells.length !== headers.length) row.errors._fila = `Se esperaban ${headers.length} columnas y se encontraron ${cells.length}.`;
-    validateCustomRow(state, kind, row);
+    validateCustomRow(state, kind, row, plannedCategoryIds);
     const identity = kind === "currencies"
       ? `${values.currencyId}:${values.date || ""}`
       : kind === "priceLists"
@@ -419,21 +428,42 @@ function replaceRecord<T extends { id: string }>(list: T[], record: T, matchId?:
 function importCustomRow(state: State, kind: Exclude<MasterImportKind, ImportKind>, values: Record<string, string>, matchId?: string): boolean {
   if (kind === "companies") {
     const record: Company = { id: values.id, taxId: values.taxId || "", legalName: values.legalName, tradeName: stringValue(values, "tradeName"), fiscalAddress: values.fiscalAddress, baseCurrency: values.baseCurrency, taxRegime: stringValue(values, "taxRegime"), phone: stringValue(values, "phone"), email: stringValue(values, "email"), website: stringValue(values, "website"), active: bool(values.active) };
-    state.companies ??= []; return replaceRecord(state.companies, record, matchId);
+    state.companies ??= [];
+    const isPrimary = (matchId ?? record.id) === state.companies[0]?.id;
+    const updated = replaceRecord(state.companies, record, matchId);
+    if (isPrimary) state.settings.company = record.legalName;
+    return updated;
   }
   if (kind === "branches") {
     const record: Branch = { id: values.id, companyId: values.companyId, code: values.code, name: values.name, address: stringValue(values, "address") ?? "", phone: stringValue(values, "phone"), active: bool(values.active) };
-    state.branches ??= []; return replaceRecord(state.branches, record, matchId);
+    state.branches ??= [];
+    const previous = state.branches.find((branch) => branch.id === matchId);
+    const updated = replaceRecord(state.branches, record, matchId);
+    state.warehouses.forEach((warehouse) => {
+      if (warehouse.branchId === (matchId ?? record.id) || previous && warehouse.branch === previous.name) {
+        warehouse.branchId = matchId ?? record.id;
+        warehouse.branch = record.name;
+      }
+    });
+    return updated;
   }
   if (kind === "warehouses") {
-    const record: Warehouse = { id: values.id, code: values.code, name: values.name, branch: values.branch || values.branchId, branchId: values.branchId, type: values.type as Warehouse["type"], active: bool(values.active) };
+    const record: Warehouse = { id: values.id, code: values.code, name: values.name, branch: state.branches?.find((branch) => branch.id === values.branchId)?.name ?? values.branch ?? values.branchId, branchId: values.branchId, type: values.type as Warehouse["type"], active: bool(values.active) };
     const updated = replaceRecord(state.warehouses, record, matchId);
-    state.products.forEach((product) => { state.stock[product.id] ??= {}; state.stock[product.id][record.id] ??= 0; });
+    state.products.forEach((product) => { state.stock[product.id] ??= {}; state.stock[product.id][matchId ?? record.id] ??= 0; });
     return updated;
   }
   if (kind === "categories") {
     const record: MasterCategory = { id: values.id, code: values.code, name: values.name, parentId: stringValue(values, "parentId"), active: bool(values.active) };
-    state.masterCategories ??= []; const updated = replaceRecord(state.masterCategories, record, matchId); if (!state.categories.some((name) => normalize(name) === normalize(record.name))) state.categories.push(record.name); return updated;
+    state.masterCategories ??= [];
+    const previous = state.masterCategories.find((category) => category.id === matchId);
+    const updated = replaceRecord(state.masterCategories, record, matchId);
+    if (previous && normalize(previous.name) !== normalize(record.name)) {
+      state.categories = state.categories.map((name) => normalize(name) === normalize(previous.name) ? record.name : name);
+      state.products.forEach((product) => { if (product.categoryId === previous.id || normalize(product.category) === normalize(previous.name)) product.category = record.name; });
+    }
+    if (!state.categories.some((name) => normalize(name) === normalize(record.name))) state.categories.push(record.name);
+    return updated;
   }
   if (kind === "brands") { const record: Brand = { id: values.id, code: values.code, name: values.name, countryOfOrigin: stringValue(values, "countryOfOrigin"), active: bool(values.active) }; state.brands ??= []; return replaceRecord(state.brands, record, matchId); }
   if (kind === "units") { const record: UnitOfMeasure = { id: values.id, code: values.code, name: values.name, abbreviation: values.abbreviation, precision: numberValue(values, "precision"), active: bool(values.active) }; state.units ??= []; return replaceRecord(state.units, record, matchId); }
@@ -445,8 +475,9 @@ function importCustomRow(state: State, kind: Exclude<MasterImportKind, ImportKin
     state.currencies ??= []; state.exchangeRates ??= [];
     const currency: Currency = { id: values.currencyId, isoCode: values.isoCode, name: values.name, symbol: values.symbol, active: bool(values.currencyActive) };
     const updatedCurrency = replaceRecord(state.currencies, currency, matchId);
+    const currencyId = matchId ?? values.currencyId;
     if (values.date) {
-      const rate: ExchangeRate = { id: `TDC-${values.currencyId}-${values.date}`, currencyId: values.currencyId, date: values.date, buyRate: numberValue(values, "buyRate"), sellRate: numberValue(values, "sellRate"), active: bool(values.rateActive) };
+      const rate: ExchangeRate = { id: `TDC-${currencyId}-${values.date}`, currencyId, date: values.date, buyRate: numberValue(values, "buyRate"), sellRate: numberValue(values, "sellRate"), active: bool(values.rateActive) };
       replaceRecord(state.exchangeRates, rate, rate.id);
     }
     return updatedCurrency;
@@ -456,7 +487,7 @@ function importCustomRow(state: State, kind: Exclude<MasterImportKind, ImportKin
   const list: PriceList = { id: values.id, code: values.code, name: values.name, currencyId: values.currencyId, validFrom: values.validFrom, validTo: stringValue(values, "validTo"), active: bool(values.active) };
   state.priceLists ??= []; state.priceListItems ??= [];
   const updatedList = replaceRecord(state.priceLists, list, matchId);
-  const item: PriceListItem = { id: `PLI-${values.id}-${values.productId}-${values.minQuantity}`, priceListId: values.id, productId: values.productId, minQuantity: numberValue(values, "minQuantity"), price: numberValue(values, "price"), active: bool(values.itemActive) };
+  const item: PriceListItem = { id: `PLI-${matchId ?? values.id}-${values.productId}-${values.minQuantity}`, priceListId: matchId ?? values.id, productId: values.productId, minQuantity: numberValue(values, "minQuantity"), price: numberValue(values, "price"), active: bool(values.itemActive) };
   replaceRecord(state.priceListItems, item, item.id);
   return updatedList;
 }
