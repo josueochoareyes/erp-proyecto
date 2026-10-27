@@ -7,36 +7,7 @@
   margin-bottom: .35rem;
 }
 .masters-page-actions { align-items: flex-start; display: flex; gap: 10px; }
-.masters-groups {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin: 20px 0 14px;
-}
-.masters-group-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border: 1px solid var(--line, #e4e9f0);
-  border-radius: 16px;
-  background: var(--panel);
-  color: inherit;
-  padding: 15px;
-  text-align: left;
-  cursor: pointer;
-  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
-}
-.masters-group-card:hover, .masters-group-card.is-selected {
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-sm);
-  transform: translateY(-1px);
-}
-.masters-group-card > span:nth-child(2) { min-width: 0; flex: 1; }
-.masters-group-card strong, .masters-group-card small { display: block; }
-.masters-group-card strong { font-size: .9rem; }
-.masters-group-card small { color: var(--mute); font-size: .73rem; line-height: 1.35; margin-top: 3px; }
-.masters-group-card b { color: var(--chart-sales); font-size: .78rem; }
-.masters-group-icon, .masters-section-icon {
+.masters-section-icon {
   display: inline-grid;
   place-items: center;
   flex: 0 0 auto;
@@ -44,7 +15,6 @@
   background: color-mix(in srgb, var(--chart-sales) 12%, var(--panel));
   border-radius: 11px;
 }
-.masters-group-icon { width: 36px; height: 36px; }
 .masters-subnav {
   display: flex;
   gap: 7px;
@@ -53,6 +23,7 @@
   scrollbar-width: thin;
 }
 .masters-subnav-tab { white-space: nowrap; }
+.masters-subnav-tab:focus-visible { outline: 2px solid var(--chart-sales); outline-offset: -2px; }
 .masters-section { margin-top: 20px; }
 .masters-section-head {
   display: flex;
@@ -204,7 +175,6 @@
 @media (max-width: 900px) {
   .masters-page-actions { width: 100%; }
   .masters-page-actions .secondary-btn { justify-content: center; width: 100%; }
-  .masters-groups { grid-template-columns: 1fr; }
   .masters-section-head { flex-direction: column; }
   .masters-section-actions { width: 100%; justify-content: space-between; }
   .company-master-layout { grid-template-columns: 1fr; }

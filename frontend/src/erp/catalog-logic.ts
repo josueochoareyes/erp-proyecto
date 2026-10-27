@@ -197,8 +197,30 @@ export const nextSupplierCode = (state: State) => {
 export function deleteCategory(state: State, category: string, replacement = "") {
   if (!state.categories.includes(category)) throw Error("La categoría ya no existe.");
   if (replacement === category || replacement && !state.categories.includes(replacement)) throw Error("Selecciona otra categoría disponible.");
+  const master = state.masterCategories?.find((item) => item.name === category);
+  const target = state.masterCategories?.find((item) => item.name === replacement);
+  const hasLinks = state.products.some((item) => item.category === category || (master && item.categoryId === master.id))
+    || !!state.masterCategories?.some((item) => master && item.parentId === master.id)
+    || [...state.documents, ...state.quotes].some((item) => item.lines.some((line) => line.productSnapshot?.category === category))
+    || !!state.suppliers.some((item) => item.suppliedCategories?.includes(category) || (master && item.suppliedCategories?.includes(master.id)));
+  if (hasLinks) {
+    if (master) master.active = false;
+    else {
+      state.masterCategories ??= [];
+      state.masterCategories.push({ id: crypto.randomUUID(), code: `CAT-${crypto.randomUUID()}`, name: category, active: false });
+    }
+    state.audit.unshift({ id: crypto.randomUUID(), date: new Date().toISOString(), action: "Desactivar categoría", record: category });
+    return;
+  }
   state.categories = state.categories.filter((name) => name !== category);
-  for (const product of state.products) if (product.category === category) product.category = replacement;
+  for (const product of state.products) if (product.category === category || (master && product.categoryId === master.id)) {
+    product.category = replacement;
+    product.categoryId = target?.id;
+  }
+  if (master) {
+    if (hasLinks) master.active = false;
+    else state.masterCategories = state.masterCategories?.filter((item) => item.id !== master.id);
+  }
   const deleted = state.deletedCategories ??= [];
   if (!deleted.includes(category)) deleted.push(category);
   state.audit.unshift({id: crypto.randomUUID(), date: new Date().toISOString(), action: "Eliminar categoría", record: `${category} → ${replacement || "Sin categoría"}`});

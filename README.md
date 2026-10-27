@@ -41,6 +41,10 @@ También se admite Root Directory `frontend`: en ese caso Vercel utiliza `fronte
 
 ## Importación CSV y puesta en marcha
 
+Los catálogos de Maestros incluyen una acción de eliminar o desactivar con confirmación, también en Empresas, tipos de cambio y precios individuales. Los registros relacionados se conservan inactivos; los registros sin vínculos se eliminan y la acción queda en auditoría. La empresa principal y las monedas base están protegidas. Los registros predeterminados del sistema se desactivan para conservar su estado al recargar. Categorías conserva los identificadores y asignaciones cuando tiene vínculos.
+
+Maestros organiza sus 17 catálogos en cinco accesos del menú lateral: **Organización** (empresas, sucursales y almacenes), **Productos** (catálogo, categorías, marcas, unidades y conversiones), **Terceros** (clientes, proveedores y transportistas), **Gestión comercial** (vendedores, zonas y listas de precios) y **Monedas, impuestos y pagos** (monedas y tipos de cambio, impuestos y formas de pago). Cada acceso muestra únicamente sus pestañas. La pestaña elegida actualiza la URL, admite recarga y navegación Atrás/Adelante, y mantiene activo su grupo lateral. Los enlaces anteriores a catálogos siguen disponibles; `/maestros` y `/mantenimientos` abren Organización. La importación masiva sigue disponible como botón dentro de cada grupo.
+
 En **Maestros → Importación masiva CSV** puedes seleccionar juntos los archivos de los 17 catálogos. El sistema detecta cada uno por sus encabezados, los ordena según sus dependencias, valida las filas y muestra una revisión por archivo en un acordeón. La descarga de plantillas contiene únicamente encabezados. El lote se confirma en una sola transacción local; si un archivo completo es incompatible, no se guarda ningún archivo. Las filas con errores se señalan y se omiten; puedes elegir entre omitir o actualizar duplicados. La importación de maestros no crea órdenes, facturas ni movimientos de inventario.
 
 Una instalación nueva incluye cinco escenarios simulados conectados para probar compras, ventas e inventario. Al actualizar una instalación que ya tenía datos comerciales reales, el inicio no agrega esos escenarios a tus registros.
@@ -54,6 +58,8 @@ La importación escribe directamente en `ErpProvider` y persiste en la misma cla
 La migración de limpieza se ejecuta **una sola vez al abrir el sistema actualizado en el mismo dominio y navegador**. También elimina el antiguo respaldo local que contenía registros de prueba. Es una limpieza deliberada de toda la información operativa previa; conserva únicamente categorías, almacenes, empresa y la configuración de acceso local. Las claves de versiones anteriores no se usan para cargar operaciones. Consulta [guía de importación](docs/importacion-csv.md) para la lista exacta de columnas.
 
 ## Datos y reglas
+
+La vigencia se controla con los estados activo/inactivo y, en impuestos y listas de precios, con sus fechas de vigencia. Las categorías referenciadas se inactivan conservando las asignaciones de productos y el historial.
 
 La clave `enterprisecloud-integrated-erp-v1` de localStorage guarda un único estado compartido por los módulos. La primera ejecución inicia sin datos comerciales; los registros posteriores se conservan al recargar. Las pestañas del mismo navegador reciben actualizaciones. Al abrir una instalación anterior por primera vez, una migración única elimina clientes, proveedores, productos, documentos, cotizaciones, movimientos, stock, cobros, auditoría y valoraciones previas. Preserva exactamente las categorías, almacenes y configuración empresarial que ya estuvieran guardados. Las importaciones posteriores no se borran.
 

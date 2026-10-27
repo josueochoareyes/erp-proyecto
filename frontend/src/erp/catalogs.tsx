@@ -1,3 +1,4 @@
+import { MasterDeleteButton } from "./master-delete-button";
 import { SupplierAdministration, CatalogDeleteDialog } from "./supplier-admin";
 import { CustomerEditor } from "./customers";
 import { deleteCategory, type CatalogKind } from "./catalog-logic";
@@ -24,27 +25,11 @@ import {
 import { Modal, Records, Tag } from "./ui";
 import { toast } from "./toast";
 import { Currencies, PaymentMethods, PriceLists, Sellers, Taxes, Transporters, Zones } from "./master-extended";
-export type Catalog =
-  | "Clientes"
-  | "Productos"
-  | "Proveedores"
-  | "Almacenes"
-  | "Categorías"
-  | "Empresas"
-  | "Sucursales"
-  | "Marcas"
-  | "Unidades"
-  | "Conversiones"
-  | "Transportistas"
-  | "Vendedores"
-  | "Zonas"
-  | "Monedas"
-  | "Impuestos"
-  | "Formas de pago"
-  | "Listas de precios";
-export function Catalogs({ initialTab }: { initialTab?: Catalog } = {}) {
+import { masterCatalogs, masterGroups, type Catalog } from "./master-navigation";
+export type { Catalog } from "./master-navigation";
+export function Catalogs({ initialTab = "Empresas", onNavigate }: { initialTab?: Catalog; onNavigate?: (path: string) => void } = {}) {
   const { state, transact } = useErp();
-  const [tab, setTab] = useState<Catalog>(initialTab ?? "Empresas");
+  const [tab, setTab] = useState<Catalog>(initialTab);
   const [importKind, setImportKind] = useState<ImportKind | null>(null);
   const [masterImportOpen, setMasterImportOpen] = useState(false);
   const [editor, setEditor] = useState<Record<string, unknown> | null>(null);
@@ -56,15 +41,20 @@ export function Catalogs({ initialTab }: { initialTab?: Catalog } = {}) {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [error, setError] = useState("");
   const [active, setActive] = useState("Todos");
-  const groups = [
-    { id: "structure", label: "Empresas y estructura", description: "Las organizaciones y sedes que sostienen la operación.", tabs: ["Empresas", "Sucursales", "Almacenes"] as Catalog[] },
-    { id: "products", label: "Productos", description: "Catálogo, clasificación y unidades.", tabs: ["Productos", "Categorías", "Marcas", "Unidades", "Conversiones"] as Catalog[] },
-    { id: "parties", label: "Terceros", description: "Clientes, proveedores y transporte compartidos.", tabs: ["Clientes", "Proveedores", "Transportistas"] as Catalog[] },
-    { id: "commercial", label: "Comercial", description: "Responsables y segmentación de ventas.", tabs: ["Vendedores", "Zonas"] as Catalog[] },
-    { id: "configuration", label: "Configuración", description: "Monedas, tributos, pagos y precios.", tabs: ["Monedas", "Impuestos", "Formas de pago", "Listas de precios"] as Catalog[] },
-  ];
-  const currentGroup = groups.find((group) => group.tabs.includes(tab)) ?? groups[0];
-  const catalogs = currentGroup.tabs;
+  const currentGroup = masterGroups.find((group) => group.tabs.includes(tab)) ?? masterGroups[0];
+  const catalogs = masterCatalogs.filter((catalog) => currentGroup.tabs.includes(catalog.tab));
+  const selectCatalog = (catalog: typeof masterCatalogs[number]) => {
+    if (onNavigate) onNavigate(catalog.path);
+    else {
+      setTab(catalog.tab);
+      setActive("Todos");
+      setCategoryFilter("");
+      setError("");
+      setEditor(null);
+      setViewing(null);
+      setDeleting(null);
+    }
+  };
   const source =
     tab === "Clientes"
       ? state.customers
@@ -378,53 +368,44 @@ export function Catalogs({ initialTab }: { initialTab?: Catalog } = {}) {
       <div className="maintenance-module">
       <div className="hd page-head">
         <div>
-          <span className="masters-eyebrow">MÓDULO 01 · DATOS COMPARTIDOS</span>
-          <h1>Maestros</h1>
+          <span className="masters-eyebrow">MAESTROS · DATOS COMPARTIDOS</span>
+          <h1>{currentGroup.name}</h1>
           <p className="sub no-margin">
-            Fuente única de datos que alimenta compras, ventas, inventario y reportes.
+            {currentGroup.description}
           </p>
         </div>
         <div className="masters-page-actions">
           <button type="button" className="secondary-btn" onClick={() => setMasterImportOpen(true)}><Upload size={16} /> Importación masiva CSV</button>
         </div>
       </div>
-      <div className="masters-groups" aria-label="Grupos del módulo Maestros">
-        {groups.map((group, index) => (
+      <div className="masters-subnav" role="tablist" aria-label={`Submódulos de ${currentGroup.name}`}>
+        {catalogs.map((catalog) => (
           <button
-            key={group.id}
-            type="button"
-            className={`masters-group-card ${currentGroup.id === group.id ? "is-selected" : ""}`}
-            onClick={() => setTab(group.tabs[0])}
-          >
-            <span className="masters-group-icon">
-              {index === 0 ? <Building2 size={19} /> : index === 1 ? <Package size={19} /> : <UsersRound size={19} />}
-            </span>
-            <span><strong>{group.label}</strong><small>{group.description}</small></span>
-            <b>{group.tabs.length}</b>
-          </button>
-        ))}
-      </div>
-      <div className="masters-subnav" role="tablist" aria-label={`Submódulos de ${currentGroup.label}`}>
-        {catalogs.map((c) => (
-          <button
-            key={c}
-            id={`catalog-tab-${c.toLowerCase()}`}
+            key={catalog.tab}
+            id={`catalog-tab-${catalog.path.split("/").pop()}`}
             className="access-tab masters-subnav-tab"
             role="tab"
-            aria-selected={tab === c}
+            aria-selected={tab === catalog.tab}
+            tabIndex={tab === catalog.tab ? 0 : -1}
             aria-controls="catalog-panel"
-            onClick={() => {
-              setTab(c);
-              setActive("Todos");
-              setCategoryFilter("");
-              setError("");
+            onClick={() => selectCatalog(catalog)}
+            onKeyDown={(event) => {
+              const index = catalogs.indexOf(catalog);
+              const next = event.key === "ArrowRight" ? (index + 1) % catalogs.length
+                : event.key === "ArrowLeft" ? (index - 1 + catalogs.length) % catalogs.length
+                : event.key === "Home" ? 0 : event.key === "End" ? catalogs.length - 1 : -1;
+              if (next >= 0) {
+                event.preventDefault();
+                selectCatalog(catalogs[next]);
+                requestAnimationFrame(() => document.getElementById(`catalog-tab-${catalogs[next].path.split("/").pop()}`)?.focus());
+              }
             }}
           >
-            {c}
+            {catalog.label}
           </button>
         ))}
       </div>
-      <div id="catalog-panel" role="tabpanel" aria-labelledby={`catalog-tab-${tab.toLowerCase()}`}>
+      <div id="catalog-panel" role="tabpanel" aria-labelledby={`catalog-tab-${masterCatalogs.find((catalog) => catalog.tab === tab)?.path.split("/").pop()}`}>
       {!editor && error && (
         <p className="error" role="alert">
           {error}
@@ -895,7 +876,9 @@ function Categories() {
               const category = name.trim();
               s.categories.push(category);
               s.masterCategories ??= [];
-              s.masterCategories.push({
+              const existingMaster = s.masterCategories.find((item) => item.name === category);
+              if (existingMaster) existingMaster.active = true;
+              else s.masterCategories.push({
                 id: `CAT-${Date.now().toString(36).toUpperCase()}`,
                 code: `CAT-${String(s.masterCategories.length + 1).padStart(3, "0")}`,
                 name: category,
@@ -934,11 +917,10 @@ function Categories() {
       {deleting !== null && <Modal title="Eliminar categoría" onClose={() => setDeleting(null)}>
         <p>¿Eliminar la categoría <strong>{deleting}</strong>?</p>
         {state.products.some((product) => product.category === deleting) && <>
-          <p className="muted">Los productos se conservarán. Elige cómo clasificarlos después de eliminar esta categoría.</p>
-          <label className="filter-field">Mover productos a<select value={replacement} onChange={(event) => setReplacement(event.target.value)}><option value="">Sin categoría</option>{state.categories.filter((category) => category !== deleting).map((category) => <option key={category} value={category}>{category}</option>)}</select></label>
+          <p className="muted">La categoría se inactivará y conservará sus identificadores, productos e historial.</p>
         </>}
         {deleteError && <p className="error" role="alert">{deleteError}</p>}
-        <div className="modal-actions"><button type="button" className="secondary-btn" onClick={() => setDeleting(null)}>Cancelar</button><button type="button" className="btn" onClick={() => {try {transact((state) => deleteCategory(state, deleting, replacement)); setDeleting(null); toast.success("Categoría eliminada correctamente.");} catch (error) {setDeleteError(error instanceof Error ? error.message : "No se pudo eliminar la categoría.");}}}>Eliminar categoría</button></div>
+        <div className="modal-actions"><button type="button" className="secondary-btn" onClick={() => setDeleting(null)}>Cancelar</button><button type="button" className="btn" onClick={() => {try {transact((state) => deleteCategory(state, deleting, replacement)); setDeleting(null); toast.success("Acción aplicada correctamente.");} catch (error) {setDeleteError(error instanceof Error ? error.message : "No se pudo actualizar la categoría.");}}}>Eliminar o inactivar</button></div>
       </Modal>}
     </section>
   );
@@ -1040,7 +1022,7 @@ function CompaniesTable() {
                   <td><code>{company.baseCurrency}</code></td>
                   <td>{branchCount}</td>
                   <td><Tag value={company.active ? "Activo" : "Inactivo"} /></td>
-                  <td><button className="icon-btn" type="button" aria-label={`Editar ${company.legalName}`} onClick={() => { setError(""); setEditingId(company.id); setEditor({ ...company }); }}><Pencil size={16} /></button></td>
+                  <td><button className="icon-btn" type="button" aria-label={`Editar ${company.legalName}`} onClick={() => { setError(""); setEditingId(company.id); setEditor({ ...company }); }}><Pencil size={16} /></button><MasterDeleteButton kind="companies" id={company.id} name={company.legalName} /></td>
                 </tr>;
               })}
             </tbody>
@@ -1304,7 +1286,7 @@ function Branches() {
         });
       }}
     />
-    <div className="card masters-table-card"><table className="masters-table"><thead><tr><th>Código</th><th>Sucursal</th><th>Empresa</th><th>Dirección</th><th>Teléfono</th><th>Estado</th><th></th></tr></thead><tbody>{branches.map((branch) => <tr key={branch.id}><td><code>{branch.code}</code></td><td><strong>{branch.name}</strong></td><td>{companies.find((company) => company.id === branch.companyId)?.tradeName || companies.find((company) => company.id === branch.companyId)?.legalName || branch.companyId}</td><td>{branch.address || "No registrada"}</td><td>{branch.phone || "—"}</td><td><Tag value={branch.active ? "Activo" : "Inactivo"} /></td><td><button className="icon-btn" type="button" aria-label={`Editar ${branch.name}`} onClick={() => { setError(""); setEditor({ ...branch }); }}><Pencil size={16} /></button></td></tr>)}</tbody></table>{!branches.length && <div className="masters-empty"><MapPin size={28} /><h3>Aún no hay sucursales</h3><p>Registra la primera sede para organizar almacenes y operaciones.</p></div>}</div>
+    <div className="card masters-table-card"><table className="masters-table"><thead><tr><th>Código</th><th>Sucursal</th><th>Empresa</th><th>Dirección</th><th>Teléfono</th><th>Estado</th><th></th></tr></thead><tbody>{branches.map((branch) => <tr key={branch.id}><td><code>{branch.code}</code></td><td><strong>{branch.name}</strong></td><td>{companies.find((company) => company.id === branch.companyId)?.tradeName || companies.find((company) => company.id === branch.companyId)?.legalName || branch.companyId}</td><td>{branch.address || "No registrada"}</td><td>{branch.phone || "—"}</td><td><Tag value={branch.active ? "Activo" : "Inactivo"} /></td><td><button className="icon-btn" type="button" aria-label={`Editar ${branch.name}`} onClick={() => { setError(""); setEditor({ ...branch }); }}><Pencil size={16} /></button><MasterDeleteButton kind="branches" id={branch.id} name={branch.name} /></td></tr>)}</tbody></table>{!branches.length && <div className="masters-empty"><MapPin size={28} /><h3>Aún no hay sucursales</h3><p>Registra la primera sede para organizar almacenes y operaciones.</p></div>}</div>
     {editor && <Modal title={`${editor.id ? "Editar" : "Nueva"} sucursal`} subtitle="La sucursal se reutiliza en almacenes y documentos." onClose={() => setEditor(null)}><form onSubmit={(event) => { event.preventDefault(); save(); }}><div className="form-grid"><label>Empresa<select required value={String(editor.companyId ?? "")} onChange={(e) => setEditor({ ...editor, companyId: e.target.value })}><option value="">Selecciona una empresa</option>{companies.filter((company) => company.active || company.id === editor.companyId).map((company) => <option key={company.id} value={company.id}>{company.tradeName || company.legalName} · {company.id}</option>)}</select></label><label>Código<input required value={String(editor.code ?? "")} onChange={(e) => setEditor({ ...editor, code: e.target.value.toUpperCase() })} placeholder="LIM-01" /></label><label>Nombre<input required value={String(editor.name ?? "")} onChange={(e) => setEditor({ ...editor, name: e.target.value })} placeholder="Sede central · Lima" /></label><label className="span-two">Dirección<input value={String(editor.address ?? "")} onChange={(e) => setEditor({ ...editor, address: e.target.value })} placeholder="Av. / calle y número" /></label><label>Teléfono<input type="tel" value={String(editor.phone ?? "")} onChange={(e) => setEditor({ ...editor, phone: e.target.value })} placeholder="01 000 0000" /></label><label>Estado<select value={editor.active === false ? "Inactivo" : "Activo"} onChange={(e) => setEditor({ ...editor, active: e.target.value === "Activo" })}><option>Activo</option><option>Inactivo</option></select></label></div>{error && <p className="error" role="alert">{error}</p>}<div className="modal-actions"><button type="button" className="secondary-btn" onClick={() => setEditor(null)}>Cancelar</button><button className="btn">Guardar sucursal</button></div></form></Modal>}
   </section>;
 }
@@ -1323,7 +1305,7 @@ function Brands() {
       setEditor(null); setError(""); toast.success("Marca guardada correctamente.");
     } catch (err) { setError(err instanceof Error ? err.message : "No se pudo guardar la marca."); }
   };
-  return <section className="masters-section"><MasterSectionHeader module="1.6" title="Marcas" description="Normaliza las marcas para analizar compras, ventas y productos." count={brands.length} icon={<Tags size={20} />} onAdd={() => { setError(""); setEditor({ active: true }); }} /><div className="card masters-table-card"><table className="masters-table"><thead><tr><th>Código</th><th>Marca</th><th>País de origen</th><th>Productos</th><th>Estado</th><th></th></tr></thead><tbody>{brands.map((brand) => <tr key={brand.id}><td><code>{brand.code}</code></td><td><strong>{brand.name}</strong></td><td>{brand.countryOfOrigin || "—"}</td><td>{state.products.filter((product) => product.brandId === brand.id).length}</td><td><Tag value={brand.active ? "Activo" : "Inactivo"} /></td><td><button className="icon-btn" type="button" aria-label={`Editar ${brand.name}`} onClick={() => { setError(""); setEditor({ ...brand }); }}><Pencil size={16} /></button></td></tr>)}</tbody></table>{!brands.length && <div className="masters-empty"><Tags size={28} /><h3>Aún no hay marcas</h3><p>Agrega marcas para completar la ficha de productos.</p></div>}</div>{editor && <Modal title={`${editor.id ? "Editar" : "Nueva"} marca`} subtitle="Identifica las marcas utilizadas por los productos del catálogo." onClose={() => setEditor(null)}><form onSubmit={(event) => { event.preventDefault(); save(); }}><div className="form-grid"><label>Código<input required value={String(editor.code ?? "")} onChange={(e) => setEditor({ ...editor, code: e.target.value.toUpperCase() })} placeholder="MAR-001" /></label><label>Nombre<input required value={String(editor.name ?? "")} onChange={(e) => setEditor({ ...editor, name: e.target.value })} placeholder="Nombre de la marca" /></label><label>País de origen<span className="optional"> · opcional</span><input value={String(editor.countryOfOrigin ?? "")} onChange={(e) => setEditor({ ...editor, countryOfOrigin: e.target.value })} placeholder="Perú" /></label><label>Estado<select value={editor.active === false ? "Inactivo" : "Activo"} onChange={(e) => setEditor({ ...editor, active: e.target.value === "Activo" })}><option>Activo</option><option>Inactivo</option></select></label></div>{error && <p className="error" role="alert">{error}</p>}<div className="modal-actions"><button type="button" className="secondary-btn" onClick={() => setEditor(null)}>Cancelar</button><button className="btn">Guardar marca</button></div></form></Modal>}</section>;
+  return <section className="masters-section"><MasterSectionHeader module="1.6" title="Marcas" description="Normaliza las marcas para analizar compras, ventas y productos." count={brands.length} icon={<Tags size={20} />} onAdd={() => { setError(""); setEditor({ active: true }); }} /><div className="card masters-table-card"><table className="masters-table"><thead><tr><th>Código</th><th>Marca</th><th>País de origen</th><th>Productos</th><th>Estado</th><th></th></tr></thead><tbody>{brands.map((brand) => <tr key={brand.id}><td><code>{brand.code}</code></td><td><strong>{brand.name}</strong></td><td>{brand.countryOfOrigin || "—"}</td><td>{state.products.filter((product) => product.brandId === brand.id).length}</td><td><Tag value={brand.active ? "Activo" : "Inactivo"} /></td><td><button className="icon-btn" type="button" aria-label={`Editar ${brand.name}`} onClick={() => { setError(""); setEditor({ ...brand }); }}><Pencil size={16} /></button><MasterDeleteButton kind="brands" id={brand.id} name={brand.name} /></td></tr>)}</tbody></table>{!brands.length && <div className="masters-empty"><Tags size={28} /><h3>Aún no hay marcas</h3><p>Agrega marcas para completar la ficha de productos.</p></div>}</div>{editor && <Modal title={`${editor.id ? "Editar" : "Nueva"} marca`} subtitle="Identifica las marcas utilizadas por los productos del catálogo." onClose={() => setEditor(null)}><form onSubmit={(event) => { event.preventDefault(); save(); }}><div className="form-grid"><label>Código<input required value={String(editor.code ?? "")} onChange={(e) => setEditor({ ...editor, code: e.target.value.toUpperCase() })} placeholder="MAR-001" /></label><label>Nombre<input required value={String(editor.name ?? "")} onChange={(e) => setEditor({ ...editor, name: e.target.value })} placeholder="Nombre de la marca" /></label><label>País de origen<span className="optional"> · opcional</span><input value={String(editor.countryOfOrigin ?? "")} onChange={(e) => setEditor({ ...editor, countryOfOrigin: e.target.value })} placeholder="Perú" /></label><label>Estado<select value={editor.active === false ? "Inactivo" : "Activo"} onChange={(e) => setEditor({ ...editor, active: e.target.value === "Activo" })}><option>Activo</option><option>Inactivo</option></select></label></div>{error && <p className="error" role="alert">{error}</p>}<div className="modal-actions"><button type="button" className="secondary-btn" onClick={() => setEditor(null)}>Cancelar</button><button className="btn">Guardar marca</button></div></form></Modal>}</section>;
 }
 
 function Units() {
@@ -1341,7 +1323,7 @@ function Units() {
       setEditor(null); setError(""); toast.success("Unidad guardada correctamente.");
     } catch (err) { setError(err instanceof Error ? err.message : "No se pudo guardar la unidad."); }
   };
-  return <section className="masters-section"><MasterSectionHeader module="1.7" title="Unidades de medida" description="Controla la unidad base y la precisión permitida por producto." count={units.length} icon={<Ruler size={20} />} onAdd={() => { setError(""); setEditor({ precision: 0, active: true }); }} /><div className="card masters-table-card"><table className="masters-table"><thead><tr><th>Código</th><th>Unidad</th><th>Abreviatura</th><th>Precisión</th><th>Productos</th><th>Estado</th><th></th></tr></thead><tbody>{units.map((unit) => <tr key={unit.id}><td><code>{unit.code}</code></td><td><strong>{unit.name}</strong></td><td>{unit.abbreviation}</td><td>{unit.precision} decimales</td><td>{state.products.filter((product) => product.unit === unit.code || product.unitId === unit.id).length}</td><td><Tag value={unit.active ? "Activo" : "Inactivo"} /></td><td><button className="icon-btn" type="button" aria-label={`Editar ${unit.name}`} onClick={() => { setError(""); setEditor({ ...unit }); }}><Pencil size={16} /></button></td></tr>)}</tbody></table></div>{editor && <Modal title={`${editor.id ? "Editar" : "Nueva"} unidad`} subtitle="La precisión se aplicará en cantidades y conversiones del inventario." onClose={() => setEditor(null)}><form onSubmit={(event) => { event.preventDefault(); save(); }}><div className="form-grid"><label>Código<input required value={String(editor.code ?? "")} onChange={(e) => setEditor({ ...editor, code: e.target.value.toUpperCase() })} placeholder="UND" /></label><label>Nombre<input required value={String(editor.name ?? "")} onChange={(e) => setEditor({ ...editor, name: e.target.value })} placeholder="Unidad" /></label><label>Abreviatura<input required value={String(editor.abbreviation ?? "")} onChange={(e) => setEditor({ ...editor, abbreviation: e.target.value.toUpperCase() })} placeholder="UND" /></label><label>Precisión decimal<input type="number" min="0" max="6" step="1" value={Number(editor.precision ?? 0)} onChange={(e) => setEditor({ ...editor, precision: Number(e.target.value) })} /></label><label>Estado<select value={editor.active === false ? "Inactivo" : "Activo"} onChange={(e) => setEditor({ ...editor, active: e.target.value === "Activo" })}><option>Activo</option><option>Inactivo</option></select></label></div>{error && <p className="error" role="alert">{error}</p>}<div className="modal-actions"><button type="button" className="secondary-btn" onClick={() => setEditor(null)}>Cancelar</button><button className="btn">Guardar unidad</button></div></form></Modal>}</section>;
+  return <section className="masters-section"><MasterSectionHeader module="1.7" title="Unidades de medida" description="Controla la unidad base y la precisión permitida por producto." count={units.length} icon={<Ruler size={20} />} onAdd={() => { setError(""); setEditor({ precision: 0, active: true }); }} /><div className="card masters-table-card"><table className="masters-table"><thead><tr><th>Código</th><th>Unidad</th><th>Abreviatura</th><th>Precisión</th><th>Productos</th><th>Estado</th><th></th></tr></thead><tbody>{units.map((unit) => <tr key={unit.id}><td><code>{unit.code}</code></td><td><strong>{unit.name}</strong></td><td>{unit.abbreviation}</td><td>{unit.precision} decimales</td><td>{state.products.filter((product) => product.unit === unit.code || product.unitId === unit.id).length}</td><td><Tag value={unit.active ? "Activo" : "Inactivo"} /></td><td><button className="icon-btn" type="button" aria-label={`Editar ${unit.name}`} onClick={() => { setError(""); setEditor({ ...unit }); }}><Pencil size={16} /></button><MasterDeleteButton kind="units" id={unit.id} name={unit.name} /></td></tr>)}</tbody></table></div>{editor && <Modal title={`${editor.id ? "Editar" : "Nueva"} unidad`} subtitle="La precisión se aplicará en cantidades y conversiones del inventario." onClose={() => setEditor(null)}><form onSubmit={(event) => { event.preventDefault(); save(); }}><div className="form-grid"><label>Código<input required value={String(editor.code ?? "")} onChange={(e) => setEditor({ ...editor, code: e.target.value.toUpperCase() })} placeholder="UND" /></label><label>Nombre<input required value={String(editor.name ?? "")} onChange={(e) => setEditor({ ...editor, name: e.target.value })} placeholder="Unidad" /></label><label>Abreviatura<input required value={String(editor.abbreviation ?? "")} onChange={(e) => setEditor({ ...editor, abbreviation: e.target.value.toUpperCase() })} placeholder="UND" /></label><label>Precisión decimal<input type="number" min="0" max="6" step="1" value={Number(editor.precision ?? 0)} onChange={(e) => setEditor({ ...editor, precision: Number(e.target.value) })} /></label><label>Estado<select value={editor.active === false ? "Inactivo" : "Activo"} onChange={(e) => setEditor({ ...editor, active: e.target.value === "Activo" })}><option>Activo</option><option>Inactivo</option></select></label></div>{error && <p className="error" role="alert">{error}</p>}<div className="modal-actions"><button type="button" className="secondary-btn" onClick={() => setEditor(null)}>Cancelar</button><button className="btn">Guardar unidad</button></div></form></Modal>}</section>;
 }
 
 function Conversions() {
@@ -1382,5 +1364,5 @@ function Conversions() {
     } catch (err) { setError(err instanceof Error ? err.message : "No se pudo guardar la conversión."); }
   };
   const unitName = (id: string) => units.find((unit) => unit.id === id)?.abbreviation ?? id;
-  return <section className="masters-section"><MasterSectionHeader module="1.8" title="Conversiones de unidades" description="Define equivalencias vigentes para compras, inventario y ventas." count={conversions.length} icon={<ArrowRightLeft size={20} />} onAdd={() => { setError(""); setEditor({ validFrom: today(), active: true, factor: 1 }); }} /><div className="card masters-table-card"><table className="masters-table"><thead><tr><th>Producto</th><th>Desde</th><th>Hacia</th><th>Factor</th><th>Vigencia</th><th>Estado</th><th></th></tr></thead><tbody>{conversions.map((conversion) => <tr key={conversion.id}><td>{conversion.productId ? state.products.find((product) => product.id === conversion.productId)?.name ?? conversion.productId : "General"}</td><td>{unitName(conversion.fromUnitId)}</td><td>{unitName(conversion.toUnitId)}</td><td>1 = {conversion.factor}</td><td>{conversion.validFrom}{conversion.validTo ? ` · ${conversion.validTo}` : " · vigente"}</td><td><Tag value={conversion.active ? "Activo" : "Inactivo"} /></td><td><button className="icon-btn" type="button" aria-label="Editar conversión" onClick={() => { setError(""); setEditor({ ...conversion }); }}><Pencil size={16} /></button></td></tr>)}</tbody></table>{!conversions.length && <div className="masters-empty"><ArrowRightLeft size={28} /><h3>Aún no hay conversiones</h3><p>Úsalas cuando una operación requiera equivalencias entre unidades.</p></div>}</div>{editor && <Modal title={`${editor.id ? "Editar" : "Nueva"} conversión`} subtitle="Las conversiones no reemplazan la unidad base del producto." onClose={() => setEditor(null)}><form onSubmit={(event) => { event.preventDefault(); save(); }}><div className="form-grid"><label>Producto (opcional)<select value={String(editor.productId ?? "")} onChange={(e) => setEditor({ ...editor, productId: e.target.value })}><option value="">Conversión general</option>{state.products.filter((product) => product.active).map((product) => <option key={product.id} value={product.id}>{product.name}</option>)}</select></label><label>Unidad origen<select required value={String(editor.fromUnitId ?? "")} onChange={(e) => setEditor({ ...editor, fromUnitId: e.target.value })}><option value="">Selecciona</option>{units.map((unit) => <option key={unit.id} value={unit.id}>{unit.abbreviation} · {unit.name}</option>)}</select></label><label>Unidad destino<select required value={String(editor.toUnitId ?? "")} onChange={(e) => setEditor({ ...editor, toUnitId: e.target.value })}><option value="">Selecciona</option>{units.map((unit) => <option key={unit.id} value={unit.id}>{unit.abbreviation} · {unit.name}</option>)}</select></label><label>Factor<input required type="number" min="0.000001" step="0.000001" value={Number(editor.factor ?? 1)} onChange={(e) => setEditor({ ...editor, factor: Number(e.target.value) })} /></label><label>Vigente desde<input required type="date" value={String(editor.validFrom ?? "")} onChange={(e) => setEditor({ ...editor, validFrom: e.target.value })} /></label><label>Vigente hasta<input type="date" value={String(editor.validTo ?? "")} onChange={(e) => setEditor({ ...editor, validTo: e.target.value })} /></label></div>{error && <p className="error" role="alert">{error}</p>}<div className="modal-actions"><button type="button" className="secondary-btn" onClick={() => setEditor(null)}>Cancelar</button><button className="btn">Guardar conversión</button></div></form></Modal>}</section>;
+  return <section className="masters-section"><MasterSectionHeader module="1.8" title="Conversiones de unidades" description="Define equivalencias vigentes para compras, inventario y ventas." count={conversions.length} icon={<ArrowRightLeft size={20} />} onAdd={() => { setError(""); setEditor({ validFrom: today(), active: true, factor: 1 }); }} /><div className="card masters-table-card"><table className="masters-table"><thead><tr><th>Producto</th><th>Desde</th><th>Hacia</th><th>Factor</th><th>Vigencia</th><th>Estado</th><th></th></tr></thead><tbody>{conversions.map((conversion) => <tr key={conversion.id}><td>{conversion.productId ? state.products.find((product) => product.id === conversion.productId)?.name ?? conversion.productId : "General"}</td><td>{unitName(conversion.fromUnitId)}</td><td>{unitName(conversion.toUnitId)}</td><td>1 = {conversion.factor}</td><td>{conversion.validFrom}{conversion.validTo ? ` · ${conversion.validTo}` : " · vigente"}</td><td><Tag value={conversion.active ? "Activo" : "Inactivo"} /></td><td><button className="icon-btn" type="button" aria-label="Editar conversión" onClick={() => { setError(""); setEditor({ ...conversion }); }}><Pencil size={16} /></button><MasterDeleteButton kind="unitConversions" id={conversion.id} name={conversion.id} /></td></tr>)}</tbody></table>{!conversions.length && <div className="masters-empty"><ArrowRightLeft size={28} /><h3>Aún no hay conversiones</h3><p>Úsalas cuando una operación requiera equivalencias entre unidades.</p></div>}</div>{editor && <Modal title={`${editor.id ? "Editar" : "Nueva"} conversión`} subtitle="Las conversiones no reemplazan la unidad base del producto." onClose={() => setEditor(null)}><form onSubmit={(event) => { event.preventDefault(); save(); }}><div className="form-grid"><label>Producto (opcional)<select value={String(editor.productId ?? "")} onChange={(e) => setEditor({ ...editor, productId: e.target.value })}><option value="">Conversión general</option>{state.products.filter((product) => product.active).map((product) => <option key={product.id} value={product.id}>{product.name}</option>)}</select></label><label>Unidad origen<select required value={String(editor.fromUnitId ?? "")} onChange={(e) => setEditor({ ...editor, fromUnitId: e.target.value })}><option value="">Selecciona</option>{units.map((unit) => <option key={unit.id} value={unit.id}>{unit.abbreviation} · {unit.name}</option>)}</select></label><label>Unidad destino<select required value={String(editor.toUnitId ?? "")} onChange={(e) => setEditor({ ...editor, toUnitId: e.target.value })}><option value="">Selecciona</option>{units.map((unit) => <option key={unit.id} value={unit.id}>{unit.abbreviation} · {unit.name}</option>)}</select></label><label>Factor<input required type="number" min="0.000001" step="0.000001" value={Number(editor.factor ?? 1)} onChange={(e) => setEditor({ ...editor, factor: Number(e.target.value) })} /></label><label>Vigente desde<input required type="date" value={String(editor.validFrom ?? "")} onChange={(e) => setEditor({ ...editor, validFrom: e.target.value })} /></label><label>Vigente hasta<input type="date" value={String(editor.validTo ?? "")} onChange={(e) => setEditor({ ...editor, validTo: e.target.value })} /></label></div>{error && <p className="error" role="alert">{error}</p>}<div className="modal-actions"><button type="button" className="secondary-btn" onClick={() => setEditor(null)}>Cancelar</button><button className="btn">Guardar conversión</button></div></form></Modal>}</section>;
 }

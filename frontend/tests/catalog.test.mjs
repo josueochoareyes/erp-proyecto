@@ -213,19 +213,20 @@ test("supplier purchase ranking sorts actual orders without changing totals or r
 });
 
 
-test("category deletion reassigns products, preserves operations, and survives demo expansion", async () => {
+test("referenced categories become inactive and preserve product assignments and operations", async () => {
  const {deleteCategory} = await import("../src/erp/catalog-logic.ts");
  const {expandCatalogData} = await import("./fixtures/demo.ts");
  const state=populatedState(); expandCatalogData(state);
  const operational=JSON.stringify([state.documents,state.quotes,state.stock,state.movements]);
  const product=state.products.find(p=>p.category==="Adhesivos");
  deleteCategory(state,"Adhesivos","PVC");
- assert.equal(product.category,"PVC"); assert.equal(state.categories.includes("Adhesivos"),false);
- expandCatalogData(state); assert.equal(state.categories.includes("Adhesivos"),false);
+ assert.equal(product.category,"Adhesivos"); assert.equal(state.categories.includes("Adhesivos"),true);
+ assert.equal(state.masterCategories.find(c=>c.name==="Adhesivos").active,false);
+ expandCatalogData(state); assert.equal(state.categories.includes("Adhesivos"),true);
  assert.equal(JSON.stringify([state.documents,state.quotes,state.stock,state.movements]),operational);
  const another=state.products.find(p=>p.category==="PVC");
- deleteCategory(state,"PVC"); assert.equal(another.category,"");
- assert.throws(()=>deleteCategory(state,"PVC"),/ya no existe/);
+ deleteCategory(state,"PVC"); assert.equal(another.category,"PVC");
+ assert.equal(state.masterCategories.find(c=>c.name==="PVC").active,false);
  const before=JSON.stringify(state);
  assert.throws(()=>deleteCategory(state,state.categories[0],"NO-EXISTE"),/otra categoría/);
  assert.equal(JSON.stringify(state),before);

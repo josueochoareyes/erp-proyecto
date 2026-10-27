@@ -2,11 +2,12 @@ import { SupplierDetailsTrigger, matchesSupplier } from "./erp/suppliers";
 import { Component, useEffect, useState, type ReactNode } from "react";
 import { ErpProvider, useErp } from "./erp/store";
 import { Operations, Quotes, routes, administrationRoutes } from "./erp/pages";
-import { Catalogs, type Catalog } from "./erp/catalogs";
+import { Catalogs } from "./erp/catalogs";
+import { masterCatalogs, masterGroups, masterTabForPath } from "./erp/master-navigation";
 import { AccessControl, ProfileDrawer, avatarToneClass, userInitials, type AccessSection } from "./erp/access-control";
 import { Dashboard, Reports } from "./erp/reports";
 import { Modal } from "./erp/ui";
-import { Icon, moduleIcon, type IconName } from "./erp/icons";
+import { Icon, moduleIcon } from "./erp/icons";
 import { ToastHost } from "./erp/toast";
 import { EnterpriseCloudLogo } from "./erp/brand-logo";
 const aliases: Record<string, string> = {
@@ -23,28 +24,6 @@ const aliases: Record<string, string> = {
   "/administracion": "/administracion/usuarios",
   "/maestros": "/mantenimientos",
 };
-const masterSidebarRoutes: Array<{ name: string; path: string; tab: Catalog; icon: IconName }> = [
-  { name: "Empresas", path: "/maestros/empresa", tab: "Empresas", icon: "building" },
-  { name: "Sucursales", path: "/maestros/sucursales", tab: "Sucursales", icon: "panel" },
-  { name: "Almacenes", path: "/maestros/almacenes", tab: "Almacenes", icon: "stock" },
-  { name: "Productos", path: "/maestros/productos", tab: "Productos", icon: "empty" },
-  { name: "Categorías", path: "/maestros/categorias", tab: "Categorías", icon: "dashboard" },
-  { name: "Marcas", path: "/maestros/marcas", tab: "Marcas", icon: "brand" },
-  { name: "Unidades de medida", path: "/maestros/unidades", tab: "Unidades", icon: "filter" },
-  { name: "Conversiones", path: "/maestros/conversiones", tab: "Conversiones", icon: "arrow" },
-  { name: "Clientes", path: "/maestros/clientes", tab: "Clientes", icon: "users" },
-  { name: "Proveedores", path: "/maestros/proveedores", tab: "Proveedores", icon: "purchase" },
-  { name: "Transportistas", path: "/maestros/transportistas", tab: "Transportistas", icon: "purchase" },
-  { name: "Vendedores", path: "/maestros/vendedores", tab: "Vendedores", icon: "users" },
-  { name: "Zonas", path: "/maestros/zonas", tab: "Zonas", icon: "panel" },
-  { name: "Monedas y tipos de cambio", path: "/maestros/monedas", tab: "Monedas", icon: "wallet" },
-  { name: "Impuestos", path: "/maestros/impuestos", tab: "Impuestos", icon: "invoice" },
-  { name: "Formas de pago", path: "/maestros/formas-pago", tab: "Formas de pago", icon: "wallet" },
-  { name: "Listas de precios", path: "/maestros/listas-precios", tab: "Listas de precios", icon: "line" },
-];
-const masterTabByPath = Object.fromEntries(
-  masterSidebarRoutes.map((route) => [route.path, route.tab]),
-) as Record<string, Catalog>;
 function Shell() {
   const { state, storageError } = useErp();
   const [path, setPath] = useState(
@@ -121,7 +100,9 @@ function Shell() {
     return () => document.removeEventListener("keydown", key);
   }, []);
   const current = [...administrationRoutes, ...routes].find((r) => r.path === path);
-  const isMastersPath = path === "/mantenimientos" || path.startsWith("/maestros/");
+  const masterTab = masterTabForPath(path);
+  const activeMasterGroup = masterGroups.find((group) => masterTab && group.tabs.includes(masterTab));
+  const isMastersPath = masterTab !== undefined;
   const currentGroup = path.startsWith("/administracion/")
     ? "Administración"
     : isMastersPath
@@ -140,7 +121,7 @@ function Shell() {
   if (path === "/dashboard") page = <Dashboard />;
   else if (path === "/cotizacion") page = <Quotes />;
   else if (path === "/reportes") page = <Reports />;
-  else if (isMastersPath) page = <Catalogs key={path} initialTab={masterTabByPath[path]} />;
+  else if (isMastersPath) page = <Catalogs key={path} initialTab={masterTab} onNavigate={go} />;
   else if (path.startsWith("/administracion/")) {
     const section: AccessSection = path.endsWith("/roles")
       ? "roles"
@@ -219,15 +200,16 @@ function Shell() {
               >
                 <div className="navigation-submenu-inner">
                   {group === "Maestros"
-                    ? masterSidebarRoutes.map((child) => (
+                    ? masterGroups.map((child) => (
                         <a
                           key={child.path}
                           href={child.path}
-                          className={path === child.path ? "menu-link is-child active" : "menu-link is-child"}
-                          aria-current={path === child.path ? "page" : undefined}
+                          title={child.name}
+                          className={activeMasterGroup === child ? "menu-link is-child active" : "menu-link is-child"}
+                          aria-current={activeMasterGroup === child ? "page" : undefined}
                         >
                           <Icon name={child.icon} size={16} />
-                          {child.name}
+                          {!collapsed && child.name}
                         </a>
                       ))
                     : routes
@@ -315,7 +297,7 @@ function Shell() {
           </button>
           <div className="breadcrumb">
               EnterpriseCloud <span>/</span> {currentGroup}{" "}
-            <span>/</span> {current?.name ?? "Página"}
+            <span>/</span> {activeMasterGroup?.name ?? current?.name ?? "Página"}
           </div>
           <div className="workspace-tools">
             <button
@@ -375,7 +357,7 @@ function Shell() {
             onChange={(e) => setQuery(e.target.value)}
           />
           <div className="search-results">
-            {routes
+            {[...routes.filter((route) => route.path !== "/mantenimientos"), ...masterGroups.map((group) => ({ name: group.name, path: group.path, group: "Maestros" })), ...masterCatalogs.filter((catalog) => !masterGroups.some((group) => group.path === catalog.path)).map((catalog) => ({ name: catalog.label, path: catalog.path, group: "Maestros" }))]
               .filter((r) => r.name.toLowerCase().includes(query.toLowerCase()))
               .map((r) => (
                 <button key={r.path} onClick={() => go(r.path)}>
