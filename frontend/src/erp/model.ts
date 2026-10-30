@@ -52,6 +52,7 @@ export type Brand = {
   code: string;
   name: string;
   countryOfOrigin?: string;
+  contact?: string;
   active: boolean;
 };
 export type UnitOfMeasure = {
