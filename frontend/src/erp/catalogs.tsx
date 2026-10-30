@@ -310,7 +310,7 @@ export function Catalogs({ initialTab = "Empresas", onNavigate }: { initialTab?:
             : {}),
           ...(warehouse
             ? {
-                code: list.find((record) => record.id === id && "code" in record)?.code
+                code: s.warehouses.find((record) => record.id === id)?.code
                   ?? nextMasterCode("ALM", s.warehouses.map((record) => record.code ?? record.id)),
                 branch: selectedBranch?.name ?? String(editor.branch ?? ""),
                 branchId: selectedBranch?.id,
