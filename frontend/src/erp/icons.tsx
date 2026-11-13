@@ -35,6 +35,8 @@ const paths = {
     "M7.5 4.5l9 5",
   ],
   report: ["M3 3v18h18", "M7 16v-5", "M12 16V7", "M17 16v-8"],
+  route: ["M5 20V10", "M5 10c0-3 5-3 5 0s5 3 5 0 5-3 5 0v10", "M5 20h14", "M9 4h6"],
+  commission: ["M4 20V4h16v16z", "M8 15l2-3 3 2 3-5", "M8 8h.01", "M16 16h.01"],
   settings: [
     "M4 7h5",
     "M13 7h7",
@@ -131,6 +133,8 @@ export const moduleIcon: Record<string, IconName> = {
   "/estado-cuenta": "wallet",
   "/movimiento-kardex": "movement",
   "/stock-productos": "stock",
+  "/logistica": "route",
+  "/comisiones": "commission",
   "/reportes": "report",
   "/mantenimientos": "settings",
   "/administracion/usuarios": "shield",

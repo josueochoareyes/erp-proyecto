@@ -1,0 +1,72 @@
+.logistics-workspace { display: grid; gap: 20px; min-width: 0; }
+.module-eyebrow { color: var(--mute); display: block; font-size: .68rem; font-weight: 800; letter-spacing: .11em; margin-bottom: 6px; text-transform: uppercase; }
+.logistics-tabs { margin: -4px 0 0; }
+.logistics-tabs .access-tab { align-items: center; display: inline-flex; gap: 7px; }
+.logistics-overview { display: grid; gap: 18px; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); }
+.overview-route { background: linear-gradient(145deg, var(--panel), var(--surface-secondary)); }
+.overview-icon { align-items: center; background: color-mix(in srgb, var(--chart-sales) 10%, var(--panel)); border-radius: 10px; color: var(--chart-sales); display: inline-flex; height: 38px; justify-content: center; width: 38px; }
+.overview-route p { color: var(--mute); font-size: .83rem; line-height: 1.65; margin: 0 0 18px; }
+.queue-list { display: grid; }
+.queue-list > div { align-items: center; border-top: 1px solid var(--line); display: grid; gap: 10px; grid-template-columns: 27px minmax(0, 1fr) auto; padding: 10px 0; }
+.queue-list > div:first-child { border-top: 0; padding-top: 0; }
+.queue-list p { display: grid; gap: 3px; margin: 0; min-width: 0; }
+.queue-list p small { color: var(--mute); font-size: .72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.queue-priority { align-items: center; background: var(--surface-secondary); border-radius: 7px; color: var(--mute); display: inline-flex; height: 27px; justify-content: center; width: 27px; }
+.queue-priority.urgent { background: color-mix(in srgb, var(--bad) 10%, var(--panel)); color: var(--bad); }
+.queue-empty { align-items: center; color: var(--ok); display: flex; font-size: .78rem; gap: 7px; min-height: 84px; }
+.logistics-route-layout { display: grid; gap: 18px; grid-template-columns: minmax(235px, .55fr) minmax(0, 1.45fr); }
+.route-list-card, .route-detail-card { min-height: 410px; }
+.section-card-head { align-items: flex-start; display: flex; gap: 16px; justify-content: space-between; margin-bottom: 18px; }
+.section-card-head > div > span { color: var(--faint); display: block; font-size: .66rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.section-card-head h2 { font-size: 1.06rem; margin: 5px 0 0; }
+.section-card-head p { color: var(--mute); font-size: .81rem; margin: 5px 0 0; }
+.route-list { display: grid; gap: 8px; }
+.route-list-item { align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; color: var(--ink); cursor: pointer; display: flex; font: inherit; justify-content: space-between; padding: 12px; text-align: left; transition: background var(--duration), border-color var(--duration); width: 100%; }
+.route-list-item:hover, .route-list-item.active { background: var(--surface-secondary); border-color: var(--border-strong); }
+.route-list-item span, .route-stops span { display: grid; gap: 3px; min-width: 0; }
+.route-list-item small, .route-stops small, .cell-detail { color: var(--mute); display: block; font-size: .73rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.route-assignment { align-items: end; border-block: 1px solid var(--line); display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)) auto; margin-bottom: 18px; padding: 15px 0; }
+.route-assignment label { color: var(--mute); display: grid; font-size: .73rem; font-weight: 600; gap: 6px; }
+.route-assignment select { min-width: 0; }
+.route-actions { display: flex; gap: 7px; }
+.route-live-panel { align-items: center; background: color-mix(in srgb, var(--ok) 6%, var(--panel)); border: 1px solid color-mix(in srgb, var(--ok) 18%, var(--line)); border-radius: 10px; display: flex; gap: 10px; margin-bottom: 16px; padding: 10px 12px; }
+.route-live-panel > div { display: grid; flex: 1; gap: 2px; }
+.route-live-panel small { color: var(--ok); font-size: .67rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.route-live-panel strong { font-size: .78rem; }
+.route-live-panel > span:last-child { color: var(--mute); font-size: .73rem; text-align: right; }
+.live-pulse { background: var(--ok); border-radius: 50%; box-shadow: 0 0 0 5px color-mix(in srgb, var(--ok) 12%, transparent); height: 7px; width: 7px; }
+.route-map { background: var(--surface-secondary); border: 1px solid var(--line); border-radius: 10px; height: 250px; overflow: hidden; }
+.route-map-empty, .route-empty, .compact-empty { align-items: center; color: var(--mute); display: flex; flex-direction: column; justify-content: center; min-height: 190px; text-align: center; }
+.route-map-empty { background: var(--surface-secondary); border: 1px dashed var(--border-strong); border-radius: 10px; flex-direction: row; gap: 12px; min-height: 250px; padding: 20px; text-align: left; }
+.route-map-empty > div { display: grid; gap: 4px; }
+.route-map-empty span { font-size: .78rem; max-width: 360px; }
+.route-canvas { align-items: stretch; flex-direction: column; gap: 22px; justify-content: flex-start; }
+.route-canvas-head { align-items: center; display: flex !important; gap: 10px; }
+.route-canvas-icon { align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 9px; color: var(--chart-sales); display: inline-flex; height: 34px; justify-content: center; width: 34px; }
+.route-canvas-track { display: flex; flex: 1; gap: 0; min-height: 105px; overflow: hidden; }
+.route-canvas-track span { align-items: center; color: var(--mute); display: grid; flex: 1; font-size: .69rem; gap: 8px; grid-template-rows: 28px auto; min-width: 86px; padding-right: 8px; position: relative; text-align: center; white-space: normal; }
+.route-canvas-track span::after { background: var(--border-strong); content: ""; height: 1px; left: calc(50% + 16px); position: absolute; right: calc(-50% + 16px); top: 14px; }
+.route-canvas-track span:last-child::after { display: none; }
+.route-canvas-track b { align-items: center; background: var(--panel); border: 1px solid var(--border-strong); border-radius: 50%; color: var(--chart-sales); display: inline-flex; height: 28px; justify-content: center; justify-self: center; position: relative; width: 28px; z-index: 1; }
+.route-empty h2 { color: var(--ink); font-size: 1rem; margin: 12px 0 5px; }
+.route-empty p, .compact-empty p { font-size: .82rem; margin: 0; }
+.route-stops { display: grid; gap: 0; list-style: none; margin: 18px 0 0; padding: 0; }
+.route-stops li { align-items: center; border-bottom: 1px solid var(--line); display: grid; gap: 11px; grid-template-columns: 27px minmax(0, 1fr) auto; padding: 12px 0; }
+.route-stops li:last-child { border-bottom: 0; }
+.route-stops b { align-items: center; background: var(--surface-secondary); border: 1px solid var(--line); border-radius: 7px; color: var(--mute); display: inline-flex; font-size: .69rem; height: 25px; justify-content: center; }
+.tracking-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(245px, 1fr)); }
+.tracking-card { border: 1px solid var(--line); border-radius: 11px; display: grid; gap: 10px; padding: 15px; }
+.tracking-card > div, .tracking-card footer { align-items: center; display: flex; gap: 8px; justify-content: space-between; }
+.tracking-number { color: var(--chart-sales); font-size: .75rem; font-weight: 750; }
+.tracking-card p { color: var(--mute); font-size: .78rem; line-height: 1.5; margin: 0; }
+.tracking-last { align-items: center; background: var(--surface-secondary); border-radius: 8px; display: flex; gap: 8px; padding: 9px; }
+.tracking-last > span { color: var(--chart-sales); display: inline-flex; }
+.tracking-last p { display: grid; gap: 2px; }
+.tracking-last small { color: var(--faint); font-size: .65rem; text-transform: uppercase; }
+.tracking-last strong { color: var(--ink); font-size: .74rem; }
+.tracking-card footer { border-top: 1px solid var(--line); margin-top: 2px; padding-top: 12px; }
+.resource-layout { display: grid; gap: 18px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.resource-layout .card { min-width: 0; }
+.field-help { color: var(--mute); font-size: .72rem; font-weight: 400; margin-top: 4px; }
+@media (max-width: 900px) { .logistics-overview, .logistics-route-layout, .resource-layout { grid-template-columns: 1fr; } .route-list-card { min-height: auto; } .route-assignment { grid-template-columns: 1fr 1fr; } .route-actions { grid-column: 1 / -1; } }
+@media (max-width: 580px) { .route-assignment { grid-template-columns: 1fr; } .tracking-card footer { align-items: stretch; flex-direction: column; } .tracking-card footer > * { width: 100%; } .section-card-head { gap: 10px; } }

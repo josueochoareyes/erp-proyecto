@@ -36,6 +36,8 @@ import {
 } from "./ui";
 import { toast } from "./toast";
 import { useDailyDateFilter } from "./daily-filter";
+import { LogisticsPage } from "./logistics-page";
+import { CommissionsPage } from "./commissions-page";
 export const routes = [
   {
     group: "Inicio",
@@ -86,6 +88,18 @@ export const routes = [
     icon: "movement",
   },
   {
+    group: "Logística",
+    name: "Logística y transporte",
+    path: "/logistica",
+    icon: "route",
+  },
+  {
+    group: "Comercial",
+    name: "Comisiones de vendedores",
+    path: "/comisiones",
+    icon: "commission",
+  },
+  {
     group: "Inventario",
     name: "Stock de productos",
     path: "/stock-productos",
@@ -130,6 +144,8 @@ const descriptions: Record<string, string> = {
     "Historial de entradas y salidas conectado con compras y ventas.",
   "stock-productos":
     "Existencias y valorización actual por producto y almacén.",
+  logistica: "Planifica despachos, rutas, unidades, entregas y devoluciones.",
+  comisiones: "Calcula y liquida incentivos comerciales con reglas vigentes.",
 };
 function Head({
   title,
@@ -162,6 +178,8 @@ export function Operations({ view }: { view: string }) {
   const [cancelError, setCancelError] = useState("");
   const [error, setError] = useState("");
   if (view === "ingreso-kardex") return <ReceivingPage />;
+  if (view === "logistica") return <LogisticsPage />;
+  if (view === "comisiones") return <CommissionsPage />;
   const name = routes.find((r) => r.path === `/${view}`)?.name ?? view;
   const partyName = (id: string) =>
     [...state.customers, ...state.suppliers].find((p) => p.id === id)?.name ??

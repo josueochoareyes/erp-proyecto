@@ -15,6 +15,8 @@ import {
   today,
   total,
 } from "../src/erp/model.ts";
+import { addDriver, addVehicle, assignRoute, confirmDelivery, createDispatch, createRoute, receiveRouteReturn, registerRouteReturn, startRoute } from "../src/erp/logistics.ts";
+import { generateCommission, saveCommissionRule } from "../src/erp/commissions.ts";
 import { populatedState } from "./fixtures/populated-state.ts";
 
 test("fractional inventory quantities are retained independently of money rounding", () => {
@@ -44,6 +46,38 @@ test("invalid dates and amounts below one cent are rejected", () => {
       reference: "test",
     }),
   );
+});
+
+test("logistics assigns only a capable vehicle, confirms evidence and returns stock through Kardex", () => {
+  const s = populatedState();
+  const ov = createDocument(s, draft(s));
+  invoice(s, ov.id, ov.voucher, today());
+  const dispatch = createDispatch(s, { salesOrderId: ov.id, warehouseId: ov.warehouseId, priority: "Normal" });
+  const route = createRoute(s, today(), [dispatch.id]);
+  const vehicle = addVehicle(s, "ABC-123", "Furgón", 20);
+  const driver = addDriver(s, "Ana Torres", "Q12345678", "2030-01-01");
+  assignRoute(s, route.id, vehicle.id, driver.id, 0);
+  startRoute(s, route.id);
+  assert.throws(() => confirmDelivery(s, { dispatchId: dispatch.id, dateTime: "", receiver: "", evidenceUrl: "" }));
+  confirmDelivery(s, { dispatchId: dispatch.id, dateTime: "", receiver: "Cliente", evidenceUrl: "https://evidence.test/1" });
+  const before = stockOf(s, ov.lines[0].productId, ov.warehouseId);
+  registerRouteReturn(s, dispatch.id, ov.lines[0].productId, 1, "Rechazo parcial", "Apto para venta");
+  const returned = s.routeReturns[0];
+  receiveRouteReturn(s, returned.id, ov.warehouseId, true);
+  assert.equal(stockOf(s, ov.lines[0].productId, ov.warehouseId), before + 1);
+  assert.equal(returned.status, "Recibida");
+});
+
+test("commissions snapshot a valid rule once per invoice", () => {
+  const s = populatedState();
+  s.sellers = [{ id: "VEN-001", code: "VEN-001", name: "Ana", commissionPct: 0, monthlyTarget: 0, active: true }];
+  s.customers[0].sellerId = "VEN-001";
+  const ov = createDocument(s, draft(s));
+  const cp = invoice(s, ov.id, ov.voucher, today());
+  saveCommissionRule(s, { code: "COM-01", name: "Base facturada", basis: "Facturado neto", percentage: 5, validFrom: today(), active: true });
+  const commission = generateCommission(s, cp.id);
+  assert.equal(commission.amount, Math.round((cp.total / 1.18 * 0.05 + Number.EPSILON) * 100) / 100);
+  assert.throws(() => generateCommission(s, cp.id));
 });
 
 function draft(state, kind = "OV", quantity = 2) {

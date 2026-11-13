@@ -103,6 +103,136 @@ export type Zone = {
   sellerId?: string;
   active: boolean;
 };
+export type Vehicle = {
+  id: string;
+  code: string;
+  plate: string;
+  description: string;
+  capacityUnits: number;
+  odometer: number;
+  active: boolean;
+};
+export type Driver = {
+  id: string;
+  code: string;
+  name: string;
+  license: string;
+  licenseExpiresOn: string;
+  phone?: string;
+  active: boolean;
+};
+export type DispatchStatus = "Borrador" | "Planificado" | "Asignado" | "En ruta" | "Entregado" | "Entrega fallida" | "Cerrado" | "Cancelado";
+export type Dispatch = {
+  id: string;
+  number: string;
+  date: string;
+  salesOrderId: string;
+  invoiceId?: string;
+  branchId?: string;
+  warehouseId: string;
+  zoneId?: string;
+  priority: "Normal" | "Alta" | "Urgente";
+  deliveryWindow?: string;
+  deliveryAddress: string;
+  capacityUnits: number;
+  guideNumber?: string;
+  routeId?: string;
+  status: DispatchStatus;
+  createdAt: string;
+};
+export type Route = {
+  id: string;
+  number: string;
+  date: string;
+  zoneId?: string;
+  dispatchIds: string[];
+  vehicleId?: string;
+  driverId?: string;
+  capacityUnits: number;
+  initialMileage?: number;
+  status: "Borrador" | "Programada" | "En ruta" | "Cerrada" | "Cancelada";
+  mapUrl?: string;
+};
+export type DeliveryTracking = {
+  id: string;
+  dispatchId: string;
+  dateTime: string;
+  status: string;
+  observation?: string;
+  latitude?: number;
+  longitude?: number;
+};
+export type DeliveryConfirmation = {
+  dispatchId: string;
+  dateTime: string;
+  receiver: string;
+  evidenceUrl?: string;
+  observation?: string;
+  latitude?: number;
+  longitude?: number;
+};
+export type RouteReturn = {
+  id: string;
+  dispatchId: string;
+  productId: string;
+  quantity: number;
+  reason: string;
+  condition: "Apto para venta" | "Dañado" | "Pendiente de revisión";
+  returnDocument?: string;
+  status: "Pendiente de recepción" | "Recibida" | "Rechazada";
+  movementId?: string;
+};
+export type RouteLiquidation = {
+  id: string;
+  routeId: string;
+  fuel: number;
+  tolls: number;
+  otherExpenses: number;
+  collections: number;
+  returnsAmount: number;
+  responsible: string;
+  status: "Borrador" | "Presentada" | "Aprobada" | "Cerrada";
+};
+export type CommissionRule = {
+  id: string;
+  code: string;
+  name: string;
+  basis: "Facturado neto" | "Cobrado neto" | "Margen neto";
+  percentage: number;
+  validFrom: string;
+  validTo?: string;
+  active: boolean;
+};
+export type GeneratedCommission = {
+  id: string;
+  invoiceId: string;
+  sellerId: string;
+  ruleId: string;
+  date: string;
+  basisAmount: number;
+  percentage: number;
+  amount: number;
+  status: "Generada" | "Liquidada" | "Anulada";
+};
+export type CommissionAdjustment = {
+  id: string;
+  commissionId: string;
+  reason: string;
+  amount: number;
+  approver: string;
+  status: "Pendiente" | "Aprobado" | "Rechazado";
+};
+export type CommissionSettlement = {
+  id: string;
+  sellerId: string;
+  period: string;
+  commissionIds: string[];
+  grossAmount: number;
+  adjustments: number;
+  netAmount: number;
+  responsible: string;
+  status: "Borrador" | "Aprobada" | "Pagada";
+};
 export type Currency = {
   id: string;
   isoCode: string;
@@ -206,6 +336,7 @@ export type Line = {
 };
 export type DocumentMetadata = {
   customerSnapshot?: Party;
+  sellerId?: string;
   currency?: string;
   commercialTerms?: string;
   createdAt?: string;
@@ -487,6 +618,18 @@ export type State = {
   paymentMethods?: PaymentMethod[];
   priceLists?: PriceList[];
   priceListItems?: PriceListItem[];
+  vehicles?: Vehicle[];
+  drivers?: Driver[];
+  dispatches?: Dispatch[];
+  routes?: Route[];
+  deliveryTracking?: DeliveryTracking[];
+  deliveryConfirmations?: DeliveryConfirmation[];
+  routeReturns?: RouteReturn[];
+  routeLiquidations?: RouteLiquidation[];
+  commissionRules?: CommissionRule[];
+  generatedCommissions?: GeneratedCommission[];
+  commissionAdjustments?: CommissionAdjustment[];
+  commissionSettlements?: CommissionSettlement[];
   deletedCategories?: string[];
   documents: Document[];
   quotes: Quote[];
@@ -685,6 +828,7 @@ export function createDocument(s: State, d: Draft, sourceId?: string) {
             d.customerSnapshot ?? s.customers.find((p) => p.id === d.partyId),
           )
         : undefined,
+    sellerId: d.kind === "OV" ? (d.sellerId ?? s.customers.find((p) => p.id === d.partyId)?.sellerId) : undefined,
     currency: d.currency ?? s.settings.currency,
     commercialTerms:
       d.commercialTerms ??
