@@ -1,12 +1,12 @@
 import { test, expect } from "../fixtures/browser-test";
 import { masterCatalogs, masterGroups } from "../../src/erp/master-navigation";
 
-test("Maestros agrupa los 17 catálogos en cinco accesos y conserva enlaces directos", async ({ page }) => {
+test("Maestros agrupa los 17 catálogos en cuatro accesos y conserva enlaces directos", async ({ page }) => {
   for (const catalog of masterCatalogs) {
     await page.goto(catalog.path);
     const group = masterGroups.find((item) => item.tabs.includes(catalog.tab))!;
     const sidebar = page.locator('[id="group-Maestros"]');
-    await expect(sidebar.getByRole("link")).toHaveCount(5);
+    await expect(sidebar.getByRole("link")).toHaveCount(4);
     await expect(sidebar.getByRole("link", { name: group.name, exact: true })).toHaveAttribute("aria-current", "page");
     await expect(page.getByRole("heading", { level: 1, name: group.name, exact: true })).toBeVisible();
     await expect(page.getByRole("tab", { selected: true })).toHaveText(catalog.label);
@@ -31,10 +31,10 @@ test("pestañas, recarga, historial y teclado conservan la selección", async ({
   await expect(page.getByRole("tab", { selected: true })).toBeFocused();
   await page.keyboard.press("Home");
   await expect(page.getByRole("tab", { selected: true })).toHaveText("Clientes");
-  await page.locator('[id="group-Maestros"]').getByRole("link", { name: "Gestión comercial", exact: true }).click();
+  await page.locator('[id="group-Maestros"]').getByRole("link", { name: "Gestión Comercial y Terceros", exact: true }).click();
   await page.getByRole("tab", { name: "Listas de precios", exact: true }).click();
   await expect(page).toHaveURL(/\/maestros\/listas-precios$/);
-  await expect(page.locator('[id="group-Maestros"] a[aria-current="page"]')).toHaveText("Gestión comercial");
+  await expect(page.locator('[id="group-Maestros"] a[aria-current="page"]')).toHaveText("Gestión Comercial y Terceros");
   await page.getByRole("button", { name: "Importación masiva CSV", exact: true }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
 });

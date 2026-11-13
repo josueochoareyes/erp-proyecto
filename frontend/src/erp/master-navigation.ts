@@ -25,13 +25,14 @@ export const masterCatalogs: Array<{ tab: Catalog; path: string; label: string }
 export const masterGroups: Array<{ name: string; path: string; icon: IconName; description: string; tabs: Catalog[] }> = [
   { name: "Organización", path: "/maestros/organizacion", icon: "building", description: "Empresas, sucursales y almacenes de la operación.", tabs: ["Empresas", "Sucursales", "Almacenes"] },
   { name: "Productos", path: "/maestros/productos", icon: "empty", description: "Catálogo de productos, clasificación y unidades de medida.", tabs: ["Productos", "Categorías", "Marcas", "Unidades", "Conversiones"] },
-  { name: "Terceros", path: "/maestros/terceros", icon: "users", description: "Datos compartidos de clientes, proveedores y transportistas.", tabs: ["Clientes", "Proveedores", "Transportistas"] },
-  { name: "Gestión comercial", path: "/maestros/gestion-comercial", icon: "line", description: "Vendedores, zonas comerciales y listas de precios.", tabs: ["Vendedores", "Zonas", "Listas de precios"] },
+  { name: "Gestión Comercial y Terceros", path: "/maestros/gestion-comercial-terceros", icon: "users", description: "Clientes, proveedores, transportistas, vendedores, zonas y listas de precios.", tabs: ["Clientes", "Proveedores", "Transportistas", "Vendedores", "Zonas", "Listas de precios"] },
   { name: "Monedas, impuestos y pagos", path: "/maestros/monedas-impuestos-pagos", icon: "wallet", description: "Monedas, tipos de cambio, tributos y formas de pago.", tabs: ["Monedas", "Impuestos", "Formas de pago"] },
 ];
 
 export function masterTabForPath(path: string): Catalog | undefined {
   if (path === "/mantenimientos" || path === "/maestros") return "Empresas";
+  if (path === "/maestros/terceros") return "Clientes";
+  if (path === "/maestros/gestion-comercial") return "Vendedores";
   return masterCatalogs.find((catalog) => catalog.path === path)?.tab
     ?? masterGroups.find((group) => group.path === path)?.tabs[0];
 }

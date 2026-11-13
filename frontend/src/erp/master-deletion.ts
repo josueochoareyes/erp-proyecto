@@ -71,7 +71,7 @@ export function masterDeletionPolicy(state: State, kind: MasterKind, id: string)
       linked = allParties.some((party) => party.priceListId === item.priceListId);
       break;
     }
-    // Transport and conversions have no operational references in the current model.
+    // Transporters and conversions have no operational references in the current model.
     case "transporters": case "unitConversions": break;
   }
   return linked ? { action: "deactivate", reason: "El registro tiene relaciones o historial. Se conservará su información y se marcará como inactivo." }
