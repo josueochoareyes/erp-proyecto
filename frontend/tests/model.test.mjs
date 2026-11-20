@@ -15,7 +15,7 @@ import {
   today,
   total,
 } from "../src/erp/model.ts";
-import { addDriver, addVehicle, assignRoute, confirmDelivery, createDispatch, createRoute, receiveRouteReturn, registerRouteReturn, startRoute } from "../src/erp/logistics.ts";
+import { addDriver, addVehicle, assignRoute, confirmDelivery, createDispatch, createRoute, receiveRouteReturn, registerRouteReturn, setDispatchCoordinates, setRouteOriginCoordinates, startRoute } from "../src/erp/logistics.ts";
 import { generateCommission, saveCommissionRule } from "../src/erp/commissions.ts";
 import { populatedState } from "./fixtures/populated-state.ts";
 
@@ -54,6 +54,8 @@ test("logistics assigns only a capable vehicle, confirms evidence and returns st
   invoice(s, ov.id, ov.voucher, today());
   const dispatch = createDispatch(s, { salesOrderId: ov.id, warehouseId: ov.warehouseId, priority: "Normal" });
   const route = createRoute(s, today(), [dispatch.id]);
+  setRouteOriginCoordinates(s, route.id, -12.0464, -77.0428);
+  setDispatchCoordinates(s, route.id, dispatch.id, -12.05, -77.04);
   const vehicle = addVehicle(s, "ABC-123", "Furgón", 20);
   const driver = addDriver(s, "Ana Torres", "Q12345678", "2030-01-01");
   assignRoute(s, route.id, vehicle.id, driver.id, 0);

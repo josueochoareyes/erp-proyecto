@@ -121,6 +121,10 @@ export type Driver = {
   phone?: string;
   active: boolean;
 };
+export type DispatchLine = {
+  productId: string;
+  quantity: number;
+};
 export type DispatchStatus = "Borrador" | "Planificado" | "Asignado" | "En ruta" | "Entregado" | "Entrega fallida" | "Cerrado" | "Cancelado";
 export type Dispatch = {
   id: string;
@@ -134,6 +138,12 @@ export type Dispatch = {
   priority: "Normal" | "Alta" | "Urgente";
   deliveryWindow?: string;
   deliveryAddress: string;
+  deliveryLat?: number;
+  deliveryLng?: number;
+  deliveryGeoLabel?: string;
+  deliveryContact?: string;
+  deliveryPhone?: string;
+  lines?: DispatchLine[];
   capacityUnits: number;
   guideNumber?: string;
   routeId?: string;
@@ -144,12 +154,21 @@ export type Route = {
   id: string;
   number: string;
   date: string;
+  originAddress?: string;
+  originLat?: number;
+  originLng?: number;
+  originGeoLabel?: string;
   zoneId?: string;
   dispatchIds: string[];
   vehicleId?: string;
   driverId?: string;
   capacityUnits: number;
   initialMileage?: number;
+  finalMileage?: number;
+  startedAt?: string;
+  closedAt?: string;
+  distanceMeters?: number;
+  durationMillis?: number;
   status: "Borrador" | "Programada" | "En ruta" | "Cerrada" | "Cancelada";
   mapUrl?: string;
 };
@@ -336,6 +355,7 @@ export type Line = {
 };
 export type DocumentMetadata = {
   customerSnapshot?: Party;
+  deliveryAddress?: string;
   sellerId?: string;
   currency?: string;
   commercialTerms?: string;
@@ -580,6 +600,7 @@ export type State = {
   clearedOperationDates?: string[];
   demoDashboardVersion?: number;
   integratedDemoVersion?: 2;
+  integratedSalesLogisticsCleanupVersion?: 1;
   payables?: {
     id: string;
     documentId: string;
@@ -819,6 +840,7 @@ function validate(
 }
 export function createDocument(s: State, d: Draft, sourceId?: string) {
   validate(s, d, d.kind === "OV");
+  const customer = d.kind === "OV" ? s.customers.find((p) => p.id === d.partyId) : undefined;
   const doc: Document = {
     ...d,
     lines: snapshotLines(s, d.lines),
@@ -829,6 +851,7 @@ export function createDocument(s: State, d: Draft, sourceId?: string) {
           )
         : undefined,
     sellerId: d.kind === "OV" ? (d.sellerId ?? s.customers.find((p) => p.id === d.partyId)?.sellerId) : undefined,
+    deliveryAddress: d.kind === "OV" ? (d.deliveryAddress?.trim() || customer?.address || "") : undefined,
     currency: d.currency ?? s.settings.currency,
     commercialTerms:
       d.commercialTerms ??
@@ -1107,6 +1130,7 @@ export function saveQuote(
     customerSnapshot: structuredClone(
       s.customers.find((p) => p.id === d.partyId),
     ),
+    deliveryAddress: d.deliveryAddress?.trim() || s.customers.find((p) => p.id === d.partyId)?.address || "",
     currency: old?.currency ?? s.settings.currency,
     commercialTerms: s.customers.find((p) => p.id === d.partyId)?.paymentTerms,
     createdAt: old?.createdAt ?? new Date().toISOString(),
@@ -1155,6 +1179,7 @@ export function initialState(): State {
   return {
     version: 1,
     businessCleanupVersion: 1,
+    integratedSalesLogisticsCleanupVersion: 1,
     products: [],
     customers: [],
     suppliers: [],

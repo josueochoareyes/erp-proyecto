@@ -17,7 +17,7 @@ Desde `frontend`, ejecuta `npm install` y `npm run dev`. En PowerShell con ejecu
 
 Repositorio: https://github.com/josueochoareyes/erp-proyecto
 
-No se requieren variables de entorno, claves API ni conexión a una base de datos para esta versión. En Vercel, importa el repositorio, deja Root Directory en `.` y pulsa Deploy. Los comandos de instalación (`cd frontend && npm ci`), compilación (`cd frontend && npm run build`) y salida (`frontend/dist`) ya están definidos en `vercel.json`. Usa Node.js 24.x para ejecutar también las pruebas de Node que importan archivos TypeScript.
+No se requiere una conexión a base de datos ni claves para usar los módulos actuales. El mapa de logística es opcional y requiere configurar `VITE_GOOGLE_MAPS_API_KEY` y, en producción, `VITE_GOOGLE_MAP_ID`. En Vercel, importa el repositorio, deja Root Directory en `.` y pulsa Deploy. Los comandos de instalación (`cd frontend && npm ci`), compilación (`cd frontend && npm run build`) y salida (`frontend/dist`) ya están definidos en `vercel.json`. Usa Node.js 24.x para ejecutar también las pruebas de Node que importan archivos TypeScript.
 
 La aplicación usa localStorage: los módulos y pestañas del mismo navegador y dominio comparten datos. El dominio nuevo de Vercel tiene almacenamiento independiente del entorno local y del sitio anterior; desplegar el código no transfiere los registros guardados ni crea un backend multiusuario.
 
@@ -34,10 +34,17 @@ También se admite Root Directory `frontend`: en ese caso Vercel utiliza `fronte
 - Orden de venta: pedidos y verificación de disponibilidad; cancelación antes de facturar.
 - Facturación: comprobantes, salidas de stock y deuda de ventas a crédito.
 - Estado de cuenta: cobros parciales y completos, historial y saldos.
+- Logística: despachos ligados a órdenes de venta, hojas de ruta, selección de vehículo/conductor, seguimiento manual, confirmación, devoluciones y liquidaciones.
 - Movimiento de Kardex: entradas/salidas, saldo por almacén y documento original.
 - Stock de productos: existencias, mínimos y valorización al costo del catálogo.
 - Reportes: ventas por período, compras por proveedor, stock valorizado, kardex, cuentas por cobrar y comprobantes.
 - Mantenimientos: clientes, proveedores, productos, almacenes, categorías, empresa y respaldo. Auditoría se consulta en Administración.
+
+### Logística y Google Maps
+
+La dirección se conserva en la orden de venta y se copia al despacho como dato histórico editable. La ruta puede agrupar despachos, asignar una unidad con capacidad suficiente y un conductor con licencia vigente, y registrar eventos, evidencia, devoluciones y cierre de kilometraje. El descuento de inventario sigue ocurriendo al facturar; el despacho y la confirmación no vuelven a descontar stock.
+
+El mapa calcula recorridos y optimiza el orden de paradas cuando está configurada la API key. Para desarrollo local, copia `frontend/.env.example` a `frontend/.env.local`. En Vercel define las variables `VITE_GOOGLE_MAPS_API_KEY` y opcionalmente `VITE_GOOGLE_MAP_ID`. Habilita Maps JavaScript API, Routes API y Geocoding API, activa facturación y restringe la clave por los dominios del sistema y las APIs necesarias. La pantalla registra seguimiento operativo manual; no recibe GPS del conductor en tiempo real porque la aplicación aún no tiene backend ni una vista de conductor que transmita ubicación.
 
 ## Importación CSV y puesta en marcha
 

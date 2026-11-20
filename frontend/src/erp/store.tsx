@@ -1,5 +1,9 @@
 import { ensurePurchasePayables } from "./purchase-payables";
-import { cleanBusinessData, clearDemoOperations } from "./business-cleanup";
+import {
+  cleanBusinessData,
+  clearDemoOperations,
+  clearIntegratedDemoSalesAndLogistics,
+} from "./business-cleanup";
 import {
   createContext,
   useContext,
@@ -73,8 +77,9 @@ function read(): State {
       }
       integratedDemoUpdated = true;
     }
+    const demoSalesLogisticsCleared = clearIntegratedDemoSalesAndLogistics(state);
     // Commit before returning so reloads and other tabs cannot restore demo data.
-    if (cleaned || demoOperationsCleared || accessUpdated || mastersUpdated || demoCodesUpdated || payablesUpdated || logisticsUpdated || commissionsUpdated || integratedDemoUpdated)
+    if (cleaned || demoOperationsCleared || accessUpdated || mastersUpdated || demoCodesUpdated || payablesUpdated || logisticsUpdated || commissionsUpdated || integratedDemoUpdated || demoSalesLogisticsCleared)
       localStorage.setItem(KEY, JSON.stringify(state));
     localStorage.removeItem(OLD_BACKUP);
     return state;

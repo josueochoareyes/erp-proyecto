@@ -45,6 +45,7 @@ export function QuoteEditor({
           discount: 0,
           freight: 0,
           notes: "",
+          deliveryAddress: "",
         },
   );
   const [validity, setValidity] = useState(quote?.validity ?? 15);
@@ -125,6 +126,8 @@ export function QuoteEditor({
               value={draft.partyId}
               onChange={(id) => {
                 update("partyId", id);
+                const customer = state.customers.find((item) => item.id === id);
+                update("deliveryAddress", customer?.address ?? "");
                 setError("");
               }}
             />
@@ -191,6 +194,19 @@ export function QuoteEditor({
                 </select>
               </label>
             </div>
+            {!isQuote && (
+              <label className="quote-delivery-address">
+                Dirección de entrega
+                <textarea
+                  rows={2}
+                  required
+                  value={draft.deliveryAddress ?? ""}
+                  onChange={(event) => update("deliveryAddress", event.target.value)}
+                  placeholder="Selecciona al cliente para cargar su dirección y ajusta el destino de este pedido."
+                />
+                <small>Esta dirección quedará vinculada al pedido y al despacho.</small>
+              </label>
+            )}
           </section>
           <section className="quote-section">
             <div className="quote-section-heading">

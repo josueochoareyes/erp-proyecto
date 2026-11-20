@@ -442,6 +442,11 @@ export function SalesDocumentDetailsModal({
                   {dateLabel(current.date)}
                 </Field>
                 <Field label="Estado">{current.status}</Field>
+                {(isOrder || isInvoice) && (
+                  <Field label="Dirección de entrega">
+                    {current.deliveryAddress || customer?.address}
+                  </Field>
+                )}
                 <Field label="Almacén">
                   {
                     state.warehouses.find((w) => w.id === current.warehouseId)

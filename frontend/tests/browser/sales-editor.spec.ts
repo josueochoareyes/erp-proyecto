@@ -114,9 +114,7 @@ for (const mobile of [false, true]) {
     await order.getByRole("button", { name: "Guardar orden" }).click();
     await expect(order).toBeHidden();
     await expect(
-      page
-        .getByRole("status")
-        .filter({ hasText: "Orden creada correctamente" }),
+      page.locator(".sbt-toast").filter({ hasText: "Orden de venta creada correctamente" }),
     ).toBeVisible();
     await page.reload();
     const after = await page.evaluate((k) => {
